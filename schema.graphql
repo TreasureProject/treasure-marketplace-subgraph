@@ -1,0 +1,62 @@
+type _Schema_
+  @fulltext(
+    name: "tokenSearch"
+    language: en
+    algorithm: rank
+    include: [{ entity: "Token", fields: [{ name: "name" }] }]
+  )
+
+enum Status {
+  Active
+  Sold
+}
+
+type Collection @entity {
+  id: ID!
+  address: Bytes!
+  name: String!
+  listings: [Listing!]! @derivedFrom(field: "collection")
+  symbol: String
+  tokens: [Token!]! @derivedFrom(field: "collection")
+}
+
+type Listing @entity {
+  id: ID!
+  collection: Collection!
+  expires: BigInt!
+  pricePerItem: BigInt!
+  quantity: BigInt!
+  status: Status!
+  token: Token!
+  user: User!
+}
+
+type Metadata @entity {
+  id: ID!
+  description: String
+  image: String
+  name: String
+}
+
+type Token @entity {
+  id: ID!
+  collection: Collection!
+  listings: [Listing!] @derivedFrom(field: "token")
+  metadata: Metadata
+  metadataUri: String
+  name: String
+  tokenId: BigInt!
+}
+
+type User @entity {
+  id: ID!
+  listings: [Listing!]! @derivedFrom(field: "user")
+  tokens: [UserToken!]! @derivedFrom(field: "user")
+}
+
+type UserToken @entity {
+  id: ID!
+  quantity: BigInt!
+  token: Token!
+  user: User!
+}
