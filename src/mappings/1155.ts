@@ -77,6 +77,12 @@ export function handleTransferSingle(event: TransferSingle): void {
             return v ? v.toString() : "";
           }
 
+          // This is because the Extra Life metadata is an array of a single object.
+          // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
+          if (obj.kind === JSONValueKind.ARRAY) {
+            obj = obj.toArray()[0]
+          }
+
           let object = obj.toObject();
           let description = s(object.get("description"));
           let image = s(object.get("image"));
