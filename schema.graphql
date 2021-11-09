@@ -23,11 +23,13 @@ type Collection @entity {
 type Listing @entity {
   id: ID!
   collection: Collection!
+  collectionName: String!
   expires: BigInt!
   pricePerItem: BigInt!
   quantity: BigInt!
   status: Status!
   token: Token!
+  tokenName: String!
   user: User!
 }
 

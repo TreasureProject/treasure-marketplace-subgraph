@@ -11,6 +11,7 @@ import {
   UpdatePaymentToken,
 } from "../generated/TreasureMarketplace/TreasureMarketplace";
 import {
+  getOrCreateCollection,
   getOrCreateListing,
   getOrCreateToken,
   getOrCreateUser,
@@ -60,13 +61,16 @@ export function handleItemListed(event: ItemListed): void {
 
   let listing = getOrCreateListing(getListingId(seller, tokenAddress, tokenId));
   let token = getOrCreateToken(getTokenId(tokenAddress, tokenId));
+  let collection = getOrCreateCollection(token.collection);
 
   listing.collection = token.collection;
+  listing.collectionName = collection.name;
   listing.expires = params.expirationTime;
   listing.pricePerItem = params.pricePerItem;
   listing.quantity = quantity;
   listing.status = "Active";
   listing.token = token.id;
+  listing.tokenName = token.name;
   listing.user = seller.toHexString();
 
   let userToken = getOrCreateUserToken(listing.id);
