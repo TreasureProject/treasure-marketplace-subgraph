@@ -18,12 +18,9 @@ dataSources:
         - ItemListed
         - ItemSold
         - ItemUpdated
-        - OwnershipTransferred
-        - UpdateFee
-        - UpdateFeeRecipient
-        - UpdateOracle
-        - UpdatePaymentToken
       abis:
+        - name: ERC721
+          file: ./abis/721.json
         - name: ERC1155
           file: ./abis/1155.json
         - name: TreasureMarketplace
@@ -37,16 +34,8 @@ dataSources:
           handler: handleItemSold
         - event: ItemUpdated(address,address,uint256,uint256,uint256,uint256)
           handler: handleItemUpdated
-        - event: OwnershipTransferred(indexed address,indexed address)
-          handler: handleOwnershipTransferred
         - event: UpdateFee(uint256)
           handler: handleUpdateFee
-        - event: UpdateFeeRecipient(address)
-          handler: handleUpdateFeeRecipient
-        - event: UpdateOracle(address)
-          handler: handleUpdateOracle
-        - event: UpdatePaymentToken(address)
-          handler: handleUpdatePaymentToken
       file: ./src/mapping.ts
   - name: Treasures
     kind: ethereum/contract
@@ -204,3 +193,23 @@ dataSources:
         - event: URI(string,indexed uint256)
           handler: handleURI
       file: ./src/mappings/extra-life.ts
+  - name: Smol Brains
+    kind: ethereum/contract
+    network: rinkeby
+    source:
+      address: "0xe7ad64be25149d25b3a6ea9556e7d38ec2777b3f"
+      abi: ERC721
+      startBlock: 9570148
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+      abis:
+        - name: ERC721
+          file: ./abis/721.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/mappings/smol-brains.ts
