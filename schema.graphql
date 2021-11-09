@@ -22,6 +22,7 @@ type Collection @entity {
 
 type Listing @entity {
   id: ID!
+  blockNumber: BigInt!
   collection: Collection!
   collectionName: String!
   expires: BigInt!
@@ -58,6 +59,7 @@ type User @entity {
 
 type UserToken @entity {
   id: ID!
+  blockNumber: BigInt!
   quantity: BigInt!
   token: Token!
   user: User!

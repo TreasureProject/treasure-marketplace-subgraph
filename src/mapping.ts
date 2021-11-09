@@ -63,6 +63,7 @@ export function handleItemListed(event: ItemListed): void {
   let token = getOrCreateToken(getTokenId(tokenAddress, tokenId));
   let collection = getOrCreateCollection(token.collection);
 
+  listing.blockNumber = event.block.number;
   listing.collection = token.collection;
   listing.collectionName = collection.name;
   listing.expires = params.expirationTime;
