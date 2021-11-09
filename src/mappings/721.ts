@@ -105,7 +105,7 @@ export function handleTransfer(event: Transfer): void {
       let metadata = getOrCreateMetadata(token.id);
 
       metadata.description = "Smol Brains";
-      metadata.image = "/public/img/smolbrains.png";
+      metadata.image = "/img/smolbrains.png";
       metadata.name = `Smol Brains #${tokenId.toString()}`;
 
       metadata.save();
