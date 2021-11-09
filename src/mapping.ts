@@ -70,11 +70,7 @@ export function handleItemListed(event: ItemListed): void {
   listing.quantity = quantity;
   listing.status = "Active";
   listing.token = token.id;
-
-  if (token.name) {
-    listing.tokenName = token.name;
-  }
-
+  listing.tokenName = token.name;
   listing.user = seller.toHexString();
 
   let userToken = getOrCreateUserToken(listing.id);

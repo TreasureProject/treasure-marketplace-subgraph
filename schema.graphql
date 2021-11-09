@@ -29,7 +29,7 @@ type Listing @entity {
   quantity: BigInt!
   status: Status!
   token: Token!
-  tokenName: String!
+  tokenName: String
   user: User!
 }
 
