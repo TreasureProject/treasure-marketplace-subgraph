@@ -13,7 +13,8 @@ export function handleTransfer(event: Transfer): void {
   collection.save();
 
   // Remove old collection
-  // store.remove("Collection", "0x8b97448fa2eb8dbe0e70280e3932bc3ac7256d25");
+  store.remove("Collection", "0xe7ad64be25149d25b3a6ea9556e7d38ec2777b3f");
+  store.remove("Collection", "");
 
   ERC721.handleTransfer(event);
 }
