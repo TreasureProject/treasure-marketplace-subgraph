@@ -18,7 +18,7 @@ import {
   TransferBatch,
   TransferSingle,
   URI,
-} from "../../generated/ERC1155/ERC1155";
+} from "../../generated/TreasureMarketplace/ERC1155";
 import { Collection, Token, User } from "../../generated/schema";
 import {
   ZERO_ADDRESS,

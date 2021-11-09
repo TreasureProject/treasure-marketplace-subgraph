@@ -4,7 +4,7 @@ import {
   TransferBatch,
   TransferSingle,
   URI,
-} from "../../generated/ERC1155/ERC1155";
+} from "../../generated/TreasureMarketplace/ERC1155";
 import { getOrCreateCollection } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {

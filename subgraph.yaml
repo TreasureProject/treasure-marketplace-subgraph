@@ -2,8 +2,8 @@ specVersion: 0.0.2
 schema:
   file: ./schema.graphql
 dataSources:
-  - kind: ethereum/contract
-    name: TreasureMarketplace
+  - name: TreasureMarketplace
+    kind: ethereum/contract
     network: rinkeby
     source:
       address: "0xeadbc40f5176Fd6eAb8E63cDF55b9caBa216E682"
@@ -24,6 +24,8 @@ dataSources:
         - UpdateOracle
         - UpdatePaymentToken
       abis:
+        - name: ERC1155
+          file: ./abis/1155.json
         - name: TreasureMarketplace
           file: ./abis/TreasureMarketplace.json
       eventHandlers:
