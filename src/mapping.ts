@@ -87,6 +87,7 @@ export function handleItemListed(event: ItemListed): void {
 
 export function handleItemSold(event: ItemSold): void {
   let params = event.params;
+  let quantity = params.quantity;
 
   let listing = getOrCreateListing(
     getListingId(params.seller, params.nftAddress, params.tokenId)
@@ -96,13 +97,17 @@ export function handleItemSold(event: ItemSold): void {
     return;
   }
 
-  // Remove sold listing.
-  store.remove("Listing", listing.id);
-
-  // TODO: Handle partial buys
+  if (listing.quantity.equals(quantity)) {
+    // Remove sold listing.
+    store.remove("Listing", listing.id);
+  } else {
+    listing.quantity = listing.quantity.minus(quantity);
+    listing.save();
+  }
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   listing.id += "-sold";
+  listing.quantity = quantity;
   listing.expires = BigInt.fromI32(0);
   listing.status = "Sold";
 
