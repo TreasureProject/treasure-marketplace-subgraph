@@ -109,7 +109,7 @@ export function handleTransferSingle(event: TransferSingle): void {
   token.name = getName(tokenId);
   token.tokenId = tokenId;
 
-  userToken.quantity = params.value;
+  userToken.quantity = userToken.quantity.plus(params.value);
   userToken.token = token.id;
   userToken.user = buyer.id;
 
