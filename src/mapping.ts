@@ -70,7 +70,11 @@ export function handleItemListed(event: ItemListed): void {
   listing.quantity = quantity;
   listing.status = "Active";
   listing.token = token.id;
-  listing.tokenName = token.name;
+
+  if (token.name) {
+    listing.tokenName = token.name;
+  }
+
   listing.user = seller.toHexString();
 
   let userToken = getOrCreateUserToken(listing.id);
@@ -97,7 +101,7 @@ export function handleItemSold(event: ItemSold): void {
   }
 
   // Remove sold listing.
-  store.remove('Listing', listing.id);
+  store.remove("Listing", listing.id);
 
   // TODO: Handle partial buys
 
