@@ -5,7 +5,7 @@ import {
 } from "../../generated/TreasureMarketplace/ERC721";
 import { getOrCreateCollection } from "../helpers";
 
-export function handleTransferSingle(event: Transfer): void {
+export function handleTransfer(event: Transfer): void {
   let collection = getOrCreateCollection(event.address.toHexString());
 
   collection.name = "Smol Brains";
