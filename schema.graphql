@@ -11,11 +11,17 @@ enum Status {
   Sold
 }
 
+enum TokenStandard {
+  ERC721
+  ERC1155
+}
+
 type Collection @entity {
   id: ID!
   address: Bytes!
-  name: String!
   listings: [Listing!]! @derivedFrom(field: "collection")
+  name: String!
+  standard: TokenStandard
   symbol: String
   tokens: [Token!]! @derivedFrom(field: "collection")
 }

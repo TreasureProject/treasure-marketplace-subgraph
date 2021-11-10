@@ -52,6 +52,7 @@ export function handleTransferSingle(event: TransferSingle): void {
   let uri = contract.try_uri(tokenId);
 
   collection.address = address;
+  collection.standard = 'ERC1155';
 
   // if (collection.tokens.indexOf(token.id) === -1) {
   //   collection.tokens = collection.tokens.concat([token.id]);

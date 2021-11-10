@@ -50,6 +50,7 @@ export function handleTransfer(event: Transfer): void {
   let uri = contract.try_tokenURI(tokenId);
 
   collection.address = address;
+  collection.standard = 'ERC721';
 
   // if (collection.tokens.indexOf(token.id) === -1) {
   //   collection.tokens = collection.tokens.concat([token.id]);
