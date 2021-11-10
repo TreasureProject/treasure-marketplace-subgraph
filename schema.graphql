@@ -20,6 +20,7 @@ type Collection @entity {
   id: ID!
   address: Bytes!
   floorPrice: BigInt!
+  listingIds: [String!]!
   listings: [Listing!]! @derivedFrom(field: "collection")
   name: String!
   standard: TokenStandard
@@ -52,6 +53,7 @@ type Metadata @entity {
 type Token @entity {
   id: ID!
   collection: Collection!
+  floorPrice: BigInt
   listings: [Listing!] @derivedFrom(field: "token")
   metadata: Metadata
   metadataUri: String

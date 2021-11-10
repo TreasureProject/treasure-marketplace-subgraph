@@ -1,4 +1,5 @@
-import { Address, log, store } from "@graphprotocol/graph-ts";
+import { Address, BigInt, TypedMap, log, store } from "@graphprotocol/graph-ts";
+import { Collection, Listing, Token } from "../generated/schema";
 import {
   ItemCanceled,
   ItemListed,
@@ -23,18 +24,62 @@ import {
 } from "./helpers";
 
 function updateCollectionFloorAndTotal(id: Address): void {
-  let collection = getOrCreateCollection(id.toHexString());
-  let listings = collection.listings;
+  let collection = Collection.load(id.toHexString());
+
+  if (collection == null) {
+    log.info("[updateCollectionFloorAndTotal]: Found Null Collection {}", [
+      id.toHexString(),
+    ]);
+
+    return;
+  }
+
+  let floorPrices = new TypedMap<string, BigInt>();
+  let listings = collection.listingIds;
+
+  collection.floorPrice = ZERO_BI;
 
   for (let index = 0; index < listings.length; index++) {
-    let listing = getOrCreateListing(listings[index]);
+    let listing = Listing.load(listings[index]);
 
-    if (collection.floorPrice.gt(listing.pricePerItem)) {
-      collection.floorPrice = listing.pricePerItem;
+    if (listing !== null && listing.status == "Active") {
+      let floorPrice = collection.floorPrice;
+      let pricePerItem = listing.pricePerItem;
+
+      if (collection.standard == "ERC1155") {
+        let tokenFloorPrice = floorPrices.get(listing.token);
+
+        if (
+          !tokenFloorPrice ||
+          (tokenFloorPrice && tokenFloorPrice.gt(pricePerItem))
+        ) {
+          floorPrices.set(listing.token, pricePerItem);
+        }
+      }
+
+      if (floorPrice.isZero() || floorPrice.gt(pricePerItem)) {
+        collection.floorPrice = pricePerItem;
+      }
+    } else {
+      collection.listingIds = collection.listingIds
+        .slice(0, index)
+        .concat(collection.listingIds.slice(index + 1));
     }
   }
 
-  collection.totalListings = collection.totalListings.minus(ONE_BI);
+  let entries = floorPrices.entries;
+
+  for (let index = 0; index < entries.length; index++) {
+    let entry = entries[index];
+    let token = Token.load(entry.key);
+
+    if (token) {
+      token.floorPrice = entry.value;
+      token.save();
+    }
+  }
+
+  collection.totalListings = BigInt.fromI32(collection.listingIds.length);
 
   collection.save();
 }
@@ -62,8 +107,6 @@ export function handleItemCanceled(event: ItemCanceled): void {
     return;
   }
 
-  updateCollectionFloorAndTotal(params.nftAddress);
-
   userToken.quantity = userToken.quantity.plus(listing.quantity);
   userToken.token = listing.token;
   userToken.user = listing.user;
@@ -71,6 +114,8 @@ export function handleItemCanceled(event: ItemCanceled): void {
   store.remove("Listing", listing.id);
 
   userToken.save();
+
+  updateCollectionFloorAndTotal(params.nftAddress);
 }
 
 export function handleItemListed(event: ItemListed): void {
@@ -87,13 +132,23 @@ export function handleItemListed(event: ItemListed): void {
 
   let floorPrice = collection.floorPrice;
 
-  if (
-    floorPrice.gt(pricePerItem) ||
-    (floorPrice.equals(ZERO_BI) && pricePerItem.notEqual(ZERO_BI))
-  ) {
+  if (floorPrice.isZero() || floorPrice.gt(pricePerItem)) {
     collection.floorPrice = pricePerItem;
   }
 
+  if (collection.standard == "ERC1155") {
+    let tokenFloorPrice = token.floorPrice;
+
+    if (
+      !tokenFloorPrice ||
+      (tokenFloorPrice && tokenFloorPrice.gt(pricePerItem))
+    ) {
+      token.floorPrice = pricePerItem;
+      token.save();
+    }
+  }
+
+  collection.listingIds = collection.listingIds.concat([listing.id]);
   collection.totalListings = collection.totalListings.plus(ONE_BI);
 
   listing.blockNumber = event.block.number;
@@ -123,9 +178,10 @@ export function handleItemListed(event: ItemListed): void {
 export function handleItemSold(event: ItemSold): void {
   let params = event.params;
   let quantity = params.quantity;
+  let seller = params.seller;
 
   let listing = getOrCreateListing(
-    getListingId(params.seller, params.nftAddress, params.tokenId)
+    getListingId(seller, params.nftAddress, params.tokenId)
   );
 
   if (!listing) {
@@ -140,25 +196,42 @@ export function handleItemSold(event: ItemSold): void {
     listing.save();
   }
 
-  updateCollectionFloorAndTotal(params.nftAddress);
+  if (Listing.load(`${listing.id}-sold`)) {
+    store.remove("Listing", `${listing.id}-sold`);
+  }
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
-  listing.id += "-sold";
-  listing.quantity = quantity;
-  listing.expires = ZERO_BI;
-  listing.status = "Sold";
+  let sold = getOrCreateListing(`${listing.id}-${event.logIndex}`);
 
-  listing.save();
+  sold.blockNumber = event.block.number;
+  sold.collection = listing.collection;
+  sold.collectionName = listing.collectionName;
+  sold.expires = ZERO_BI;
+  sold.pricePerItem = listing.pricePerItem;
+  sold.quantity = quantity;
+  sold.status = "Sold";
+  sold.token = listing.token;
+  sold.tokenName = listing.tokenName;
+  sold.user = seller.toHexString();
+
+  sold.save();
+
+  updateCollectionFloorAndTotal(params.nftAddress);
 }
 
 export function handleItemUpdated(event: ItemUpdated): void {
   let params = event.params;
-
-  let listing = getOrCreateListing(
-    getListingId(params.seller, params.nftAddress, params.tokenId)
+  let listingId = getListingId(
+    params.seller,
+    params.nftAddress,
+    params.tokenId
   );
 
+  let listing = Listing.load(listingId);
+
   if (!listing) {
+    log.info("handleItemUpdated, null listing {}", [listingId]);
+
     return;
   }
 
@@ -179,13 +252,13 @@ export function handleItemUpdated(event: ItemUpdated): void {
     }
   }
 
-  updateCollectionFloorAndTotal(params.nftAddress);
-
   listing.quantity = params.quantity;
   listing.pricePerItem = params.pricePerItem;
   listing.expires = params.expirationTime;
 
   listing.save();
+
+  updateCollectionFloorAndTotal(params.nftAddress);
 }
 
 export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
