@@ -115,7 +115,7 @@ export function handleTransfer(event: Transfer): void {
     }
   }
 
-  token.name = getName(tokenId);
+  token.name = `Smol Brains #${tokenId.toString()}`;
   token.tokenId = tokenId;
 
   userToken.blockNumber = event.block.number;
