@@ -1,11 +1,3 @@
-type _Schema_
-  @fulltext(
-    name: "tokenSearch"
-    language: en
-    algorithm: rank
-    include: [{ entity: "Token", fields: [{ name: "name" }] }]
-  )
-
 enum Status {
   Active
   Sold
