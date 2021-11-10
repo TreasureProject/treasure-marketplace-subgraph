@@ -19,11 +19,13 @@ enum TokenStandard {
 type Collection @entity {
   id: ID!
   address: Bytes!
+  floorPrice: BigInt!
   listings: [Listing!]! @derivedFrom(field: "collection")
   name: String!
   standard: TokenStandard
   symbol: String
   tokens: [Token!]! @derivedFrom(field: "collection")
+  totalListings: BigInt!
 }
 
 type Listing @entity {

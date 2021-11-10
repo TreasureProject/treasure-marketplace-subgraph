@@ -19,7 +19,7 @@ import {
 } from "../../generated/TreasureMarketplace/ERC721";
 import { Collection, Token, User } from "../../generated/schema";
 import {
-  ZERO_ADDRESS,
+  ONE_BI,
   base64Decode,
   getName,
   getOrCreateCollection,
@@ -119,7 +119,7 @@ export function handleTransfer(event: Transfer): void {
   token.tokenId = tokenId;
 
   userToken.blockNumber = event.block.number;
-  userToken.quantity = BigInt.fromI32(1);
+  userToken.quantity = ONE_BI;
   userToken.token = token.id;
   userToken.user = buyer.id;
 

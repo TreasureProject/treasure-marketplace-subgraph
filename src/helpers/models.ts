@@ -7,7 +7,7 @@ import {
   User,
   UserToken,
 } from "../../generated/schema";
-import { ZERO_ADDRESS } from ".";
+import { ZERO_ADDRESS, ZERO_BI } from ".";
 
 export function getOrCreateCollection(id: string): Collection {
   let collection = Collection.load(id);
@@ -15,6 +15,8 @@ export function getOrCreateCollection(id: string): Collection {
   if (!collection) {
     collection = new Collection(id);
 
+    collection.floorPrice = ZERO_BI;
+    collection.totalListings = ZERO_BI;
     collection.save();
   }
 
@@ -58,8 +60,6 @@ export function getOrCreateUser(id: string): User {
     log.info("[createUser] Create User {}", [id]);
 
     user = new User(id);
-
-    // user.save();
   }
 
   return user;
