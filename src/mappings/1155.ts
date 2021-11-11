@@ -61,11 +61,17 @@ export function handleTransferSingle(event: TransferSingle): void {
       ? uri.value
       : `${uri.value}${tokenId}.json`;
 
+    // TODO: This is okay for now until contracts are updated
+    metadataUri = metadataUri.replace(
+      "gateway.pinata.cloud",
+      "treasure-marketplace.mypinata.cloud"
+    );
+
     token.metadataUri = metadataUri;
 
     if (metadataUri.startsWith("https://")) {
       let bytes = ipfs.cat(
-        metadataUri.replace("https://gateway.pinata.cloud/ipfs/", "")
+        metadataUri.replace("https://treasure-marketplace.mypinata.cloud/ipfs/", "")
       );
 
       if (bytes === null) {
