@@ -5,7 +5,7 @@
     "codegen": "graph codegen",
     "build": "graph build",
     "deploy:dev": "graph deploy --product hosted-service wyze/treasure-marketplace-dev subgraph-dev.yaml --ipfs https://api.thegraph.com/ipfs/",
-    "deploy:prod": "graph deploy --product hosted-service wyze/treasure-marketplace subgraph-dev.yaml --ipfs https://api.thegraph.com/ipfs/",
+    "deploy:prod": "graph deploy --product hosted-service wyze/treasure-marketplace subgraph-prod.yaml --ipfs https://api.thegraph.com/ipfs/",
     "create-local": "graph create --node http://localhost:8020/ treasure/marketplace",
     "remove-local": "graph remove --node http://localhost:8020/ treasure/marketplace",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 treasure/marketplace"

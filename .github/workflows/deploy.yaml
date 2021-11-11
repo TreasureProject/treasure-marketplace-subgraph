@@ -46,4 +46,4 @@ jobs:
           graph_access_token: ${{secrets.GRAPH_ACCESS_TOKEN}}
           graph_subgraph_name: treasure-marketplace
           graph_account: wyze
-          graph_config_file: subgraph-prodx.yaml
+          graph_config_file: subgraph-prod.yaml

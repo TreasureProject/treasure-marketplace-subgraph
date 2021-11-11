@@ -5,7 +5,7 @@ dataSources:
   # TODO: Uncomment when deployed
   # - name: TreasureMarketplace
   #   kind: ethereum/contract
-  #   network: arbitrum
+  #   network: arbitrum-one
   #   source:
   #     address: "0xeadbc40f5176Fd6eAb8E63cDF55b9caBa216E682"
   #     abi: TreasureMarketplace
@@ -40,11 +40,11 @@ dataSources:
   #     file: ./src/mapping.ts
   - name: Treasures
     kind: ethereum/contract
-    network: arbitrum
+    network: arbitrum-one
     source:
-      address: "0x61B468f85B2e50bAA0B1729ffC99eFe9EF0428f0"
+      address: "0xEBba467eCB6b21239178033189CeAE27CA12EaDf"
       abi: ERC1155
-      startBlock: 9570148
+      startBlock: 2416540
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -66,11 +66,11 @@ dataSources:
       file: ./src/mappings/treasures.ts
   - name: Seed of Life
     kind: ethereum/contract
-    network: arbitrum
+    network: arbitrum-one
     source:
-      address: "0x6A67fbf40142E3Db2e6a950A4D48B0EB41107cE8"
+      address: "0x3956C81A51FeAed98d7A678d53F44b9166c8ed66"
       abi: ERC1155
-      startBlock: 9570148
+      startBlock: 2416542
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -92,11 +92,11 @@ dataSources:
       file: ./src/mappings/seed-of-life.ts
   - name: Legions
     kind: ethereum/contract
-    network: arbitrum
+    network: arbitrum-one
     source:
-      address: "0x6Fd12312f70fa5b04d66584600f39aBE31A99708"
+      address: "0x658365026D06F00965B5bb570727100E821e6508"
       abi: ERC1155
-      startBlock: 9570148
+      startBlock: 2416545
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -118,11 +118,11 @@ dataSources:
       file: ./src/mappings/legions.ts
   - name: Legions Genesis
     kind: ethereum/contract
-    network: arbitrum
+    network: arbitrum-one
     source:
-      address: "0xAC2F8732A67C15Bf81f8A6181364cE753E915037"
+      address: "0xE83c0200E93Cb1496054e387BDdaE590C07f0194"
       abi: ERC1155
-      startBlock: 9570148
+      startBlock: 2416548
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -144,11 +144,11 @@ dataSources:
       file: ./src/mappings/legions-genesis.ts
   - name: Keys
     kind: ethereum/contract
-    network: arbitrum
+    network: arbitrum-one
     source:
-      address: "0x25EE208B4F8636B5cEaAfdee051bf0BFE514f5f6"
+      address: "0xf0a35bA261ECE4FC12870e5B7b9E7790202EF9B5"
       abi: ERC1155
-      startBlock: 9570148
+      startBlock: 2416554
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -170,11 +170,11 @@ dataSources:
       file: ./src/mappings/keys.ts
   - name: Extra Life
     kind: ethereum/contract
-    network: arbitrum
+    network: arbitrum-one
     source:
-      address: "0x5e6ae51147d1eC18EdCCAe516A59fb0A26a0b48F"
+      address: "0x21e1969884D477afD2Afd4Ad668864a0EebD644c"
       abi: ERC1155
-      startBlock: 9570148
+      startBlock: 2416557
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -197,7 +197,7 @@ dataSources:
   # TODO: Uncomment when deployed
   # - name: Smol Brains
   #   kind: ethereum/contract
-  #   network: arbitrum
+  #   network: arbitrum-one
   #   source:
   #     address: "0xd72e14b8bcc89742b3f366ea80d175c3c4205b1d"
   #     abi: ERC721
