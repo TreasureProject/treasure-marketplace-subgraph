@@ -1,0 +1,216 @@
+specVersion: 0.0.2
+schema:
+  file: ./schema.graphql
+dataSources:
+  - name: TreasureMarketplace
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0x134569A78306A0F239deaF8890d0f6DDd457Bd06"
+      abi: TreasureMarketplace
+      startBlock: 9570148
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - ItemCanceled
+        - ItemListed
+        - ItemSold
+        - ItemUpdated
+      abis:
+        - name: ERC721
+          file: ./abis/721.json
+        - name: ERC1155
+          file: ./abis/1155.json
+        - name: TreasureMarketplace
+          file: ./abis/TreasureMarketplace.json
+      eventHandlers:
+        - event: ItemCanceled(address,address,uint256)
+          handler: handleItemCanceled
+        - event: ItemListed(address,address,uint256,uint256,uint256,uint256)
+          handler: handleItemListed
+        - event: ItemSold(address,address,address,uint256,uint256,uint256)
+          handler: handleItemSold
+        - event: ItemUpdated(address,address,uint256,uint256,uint256,uint256)
+          handler: handleItemUpdated
+        - event: UpdateFee(uint256)
+          handler: handleUpdateFee
+      file: ./src/mapping.ts
+  - name: Treasures
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0xEBba467eCB6b21239178033189CeAE27CA12EaDf"
+      abi: ERC1155
+      startBlock: 2416540
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - TransferBatch
+        - TransferSingle
+        - URI
+      abis:
+        - name: ERC1155
+          file: ./abis/1155.json
+      eventHandlers:
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: URI(string,indexed uint256)
+          handler: handleURI
+      file: ./src/mappings/treasures.ts
+  - name: Seed of Life
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0x3956C81A51FeAed98d7A678d53F44b9166c8ed66"
+      abi: ERC1155
+      startBlock: 2416542
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - TransferBatch
+        - TransferSingle
+        - URI
+      abis:
+        - name: ERC1155
+          file: ./abis/1155.json
+      eventHandlers:
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: URI(string,indexed uint256)
+          handler: handleURI
+      file: ./src/mappings/seed-of-life.ts
+  - name: Legions
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0x658365026D06F00965B5bb570727100E821e6508"
+      abi: ERC1155
+      startBlock: 2416545
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - TransferBatch
+        - TransferSingle
+        - URI
+      abis:
+        - name: ERC1155
+          file: ./abis/1155.json
+      eventHandlers:
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: URI(string,indexed uint256)
+          handler: handleURI
+      file: ./src/mappings/legions.ts
+  - name: Legions Genesis
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0xE83c0200E93Cb1496054e387BDdaE590C07f0194"
+      abi: ERC1155
+      startBlock: 2416548
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - TransferBatch
+        - TransferSingle
+        - URI
+      abis:
+        - name: ERC1155
+          file: ./abis/1155.json
+      eventHandlers:
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: URI(string,indexed uint256)
+          handler: handleURI
+      file: ./src/mappings/legions-genesis.ts
+  - name: Keys
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0xf0a35bA261ECE4FC12870e5B7b9E7790202EF9B5"
+      abi: ERC1155
+      startBlock: 2416554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - TransferBatch
+        - TransferSingle
+        - URI
+      abis:
+        - name: ERC1155
+          file: ./abis/1155.json
+      eventHandlers:
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: URI(string,indexed uint256)
+          handler: handleURI
+      file: ./src/mappings/keys.ts
+  - name: Extra Life
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0x21e1969884D477afD2Afd4Ad668864a0EebD644c"
+      abi: ERC1155
+      startBlock: 2416557
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - TransferBatch
+        - TransferSingle
+        - URI
+      abis:
+        - name: ERC1155
+          file: ./abis/1155.json
+      eventHandlers:
+        - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+          handler: handleTransferBatch
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: URI(string,indexed uint256)
+          handler: handleURI
+      file: ./src/mappings/extra-life.ts
+  # TODO: Uncomment when deployed
+  # - name: Smol Brains
+  #   kind: ethereum/contract
+  #   network: arbitrum-one
+  #   source:
+  #     address: "0xd72e14b8bcc89742b3f366ea80d175c3c4205b1d"
+  #     abi: ERC721
+  #     startBlock: 9570148
+  #   mapping:
+  #     kind: ethereum/events
+  #     apiVersion: 0.0.5
+  #     language: wasm/assemblyscript
+  #     entities:
+  #       - Transfer
+  #     abis:
+  #       - name: ERC721
+  #         file: ./abis/721.json
+  #     eventHandlers:
+  #       - event: Transfer(indexed address,indexed address,indexed uint256)
+  #         handler: handleTransfer
+  #     file: ./src/mappings/smol-brains.ts

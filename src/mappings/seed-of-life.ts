@@ -14,9 +14,6 @@ export function handleTransferSingle(event: TransferSingle): void {
 
   collection.save();
 
-  // // Remove Cats
-  // store.remove("Collection", "0x7dd3703d160b061813ccc8a0780257e6a21065d5");
-
   ERC1155.handleTransferSingle(event);
 }
 

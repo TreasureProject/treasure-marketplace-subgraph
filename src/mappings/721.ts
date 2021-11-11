@@ -13,10 +13,7 @@ import {
   json,
   log,
 } from "@graphprotocol/graph-ts";
-import {
-  ERC721,
-  Transfer,
-} from "../../generated/TreasureMarketplace/ERC721";
+import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import { Collection, Token, User } from "../../generated/schema";
 import {
   ONE_BI,
@@ -50,7 +47,7 @@ export function handleTransfer(event: Transfer): void {
   let uri = contract.try_tokenURI(tokenId);
 
   collection.address = address;
-  collection.standard = 'ERC721';
+  collection.standard = "ERC721";
 
   // if (collection.tokens.indexOf(token.id) === -1) {
   //   collection.tokens = collection.tokens.concat([token.id]);
@@ -59,12 +56,25 @@ export function handleTransfer(event: Transfer): void {
   token.collection = collection.id;
 
   if (!uri.reverted) {
+    let metadataUri = uri.value.endsWith(".json")
+      ? uri.value
+      : `${uri.value}${tokenId}.json`;
+
+    // TODO: This is okay for now until contracts are updated
+    metadataUri = metadataUri.replace(
+      "gateway.pinata.cloud",
+      "treasure-marketplace.mypinata.cloud"
+    );
+
     token.metadataUri = `${uri.value}${tokenId}.json`;
 
-    // This is Treasure's IPFS URI format
-    if (uri.value.startsWith("https://") && uri.value.endsWith("/")) {
-      let hash = uri.value.replace("https://gateway.pinata.cloud/ipfs/", "");
-      let bytes = ipfs.cat(`${hash}${tokenId}.json`);
+    if (metadataUri.startsWith("https://")) {
+      let bytes = ipfs.cat(
+        metadataUri.replace(
+          "https://treasure-marketplace.mypinata.cloud/ipfs/",
+          ""
+        )
+      );
 
       if (bytes === null) {
         log.info("[IPFS] Null bytes for token {}", [tokenId.toString()]);
@@ -79,7 +89,7 @@ export function handleTransfer(event: Transfer): void {
           // This is because the Extra Life metadata is an array of a single object.
           // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
           if (obj.kind === JSONValueKind.ARRAY) {
-            obj = obj.toArray()[0]
+            obj = obj.toArray()[0];
           }
 
           let object = obj.toObject();
