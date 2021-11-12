@@ -1,6 +1,10 @@
 import { Address, BigInt, TypedMap, log, store } from "@graphprotocol/graph-ts";
 import { Collection, Listing, Token } from "../generated/schema";
 import {
+  Deposit,
+  Withdraw,
+} from "../generated/TreasureStaking/TreasureStaking";
+import {
   ItemCanceled,
   ItemListed,
   ItemSold,
@@ -259,6 +263,36 @@ export function handleItemUpdated(event: ItemUpdated): void {
   listing.save();
 
   updateCollectionFloorAndTotal(params.nftAddress);
+}
+
+export function handleDeposit(event: Deposit): void {
+  let params = event.params;
+  let quantity = params.depositAmount;
+
+  let id = getListingId(params.user, event.address, params.tokenId);
+
+  let userToken = getOrCreateUserToken(id);
+
+  if (userToken.quantity.equals(quantity)) {
+    store.remove("UserToken", id);
+  } else {
+    userToken.quantity = userToken.quantity.minus(quantity);
+    userToken.save();
+  }
+}
+
+export function handleWithraw(event: Withdraw): void {
+  let params = event.params;
+  let quantity = params.withdrawAmount;
+
+  let token = getOrCreateToken(getTokenId(event.address, params.tokenId));
+  let userToken = getOrCreateUserToken(
+    getListingId(params.user, event.address, params.tokenId)
+  );
+
+  userToken.token = token.id;
+  userToken.quantity = userToken.quantity.plus(quantity);
+  userToken.save();
 }
 
 export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
