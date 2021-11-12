@@ -41,7 +41,7 @@ dataSources:
     kind: ethereum/contract
     network: arbitrum-one
     source:
-      address: "0xebba467ecb6b21239178033189ceae27ca12eadf"
+      address: "0xEBba467eCB6b21239178033189CeAE27CA12EaDf"
       abi: ERC1155
       startBlock: 2416540
     mapping:

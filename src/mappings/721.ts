@@ -26,7 +26,7 @@ import {
   getOrCreateUserToken,
   getListingId,
   getTokenId,
-  updateSeller,
+  // updateSeller,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {

@@ -12,6 +12,7 @@ import {
   ipfs,
   json,
   log,
+  store,
 } from "@graphprotocol/graph-ts";
 import {
   ERC1155,
@@ -19,8 +20,9 @@ import {
   TransferSingle,
   URI,
 } from "../../generated/TreasureMarketplace/ERC1155";
-import { Collection, Token, User } from "../../generated/schema";
+import { Collection, Token, User, UserToken } from "../../generated/schema";
 import {
+  STAKING_ADDRESS,
   ZERO_ADDRESS,
   base64Decode,
   getName,
@@ -31,7 +33,6 @@ import {
   getOrCreateUserToken,
   getListingId,
   getTokenId,
-  updateSeller,
 } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {
@@ -40,13 +41,10 @@ export function handleTransferSingle(event: TransferSingle): void {
   let to = params.to;
   let tokenId = params.id;
   let address = event.address;
+  let quantity = params.value;
 
   let collection = getOrCreateCollection(address.toHexString());
   let token = getOrCreateToken(getTokenId(address, tokenId));
-  let buyer = getOrCreateUser(to.toHexString());
-  let userToken = getOrCreateUserToken(getListingId(to, address, tokenId));
-
-  // updateSeller(from.toHexString(), token.id);
 
   let contract = ERC1155.bind(address);
   let uri = contract.try_uri(tokenId);
@@ -71,7 +69,10 @@ export function handleTransferSingle(event: TransferSingle): void {
 
     if (metadataUri.startsWith("https://")) {
       let bytes = ipfs.cat(
-        metadataUri.replace("https://treasure-marketplace.mypinata.cloud/ipfs/", "")
+        metadataUri.replace(
+          "https://treasure-marketplace.mypinata.cloud/ipfs/",
+          ""
+        )
       );
 
       if (bytes === null) {
@@ -113,18 +114,33 @@ export function handleTransferSingle(event: TransferSingle): void {
     }
   }
 
+  if (STAKING_ADDRESS == to.toHexString()) {
+    let userToken = getOrCreateUserToken(getListingId(from, address, tokenId));
+
+    if (userToken.quantity.equals(quantity)) {
+      store.remove("UserToken", userToken.id);
+    } else {
+      userToken.quantity = userToken.quantity.minus(quantity);
+      userToken.save();
+    }
+  } else {
+    let toUser = getOrCreateUser(to.toHexString());
+    let userToken = getOrCreateUserToken(getListingId(to, address, tokenId));
+
+    userToken.blockNumber = event.block.number;
+    userToken.quantity = userToken.quantity.plus(quantity);
+    userToken.token = token.id;
+    userToken.user = toUser.id;
+
+    toUser.save();
+    userToken.save();
+  }
+
   token.name = getName(tokenId);
   token.tokenId = tokenId;
 
-  userToken.blockNumber = event.block.number;
-  userToken.quantity = userToken.quantity.plus(params.value);
-  userToken.token = token.id;
-  userToken.user = buyer.id;
-
   collection.save();
   token.save();
-  userToken.save();
-  buyer.save();
 }
 
 export function handleTransferBatch(event: TransferBatch): void {
