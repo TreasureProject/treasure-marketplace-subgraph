@@ -8,7 +8,7 @@ dataSources:
     source:
       address: "0x134569A78306A0F239deaF8890d0f6DDd457Bd06"
       abi: TreasureMarketplace
-      startBlock: 9570148
+      startBlock: 2983168
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -41,7 +41,7 @@ dataSources:
     kind: ethereum/contract
     network: arbitrum-one
     source:
-      address: "0xEBba467eCB6b21239178033189CeAE27CA12EaDf"
+      address: "0xebba467ecb6b21239178033189ceae27ca12eadf"
       abi: ERC1155
       startBlock: 2416540
     mapping:
