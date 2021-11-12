@@ -7,7 +7,7 @@ import {
   User,
   UserToken,
 } from "../../generated/schema";
-import { ZERO_ADDRESS, ZERO_BI } from ".";
+import { ZERO_BI } from ".";
 
 export function getOrCreateCollection(id: string): Collection {
   let collection = Collection.load(id);
@@ -76,20 +76,3 @@ export function getOrCreateUserToken(id: string): UserToken {
   return userToken;
 }
 
-export function updateSeller(from: string, tokenId: string): void {
-  // If from zero address, it was a mint.
-  if (from !== ZERO_ADDRESS) {
-    let seller = User.load(from);
-
-    // Only worry about modifying existing sellers to remove the token from them.
-    if (seller) {
-      let index = seller.tokens.indexOf(tokenId);
-      let before = seller.tokens.slice(0, index);
-      let after = seller.tokens.slice(index + 1);
-
-      // TODO: Fix me
-      seller.tokens = before.concat(after);
-      seller.save();
-    }
-  }
-}

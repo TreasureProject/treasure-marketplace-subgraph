@@ -2,29 +2,6 @@ specVersion: 0.0.2
 schema:
   file: ./schema.graphql
 dataSources:
-  - name: TreasureStaking
-    kind: ethereum/contract
-    network: arbitrum-one
-    source:
-      address: "0xd300322832765FEe6b910D314F2c2d879427226F"
-      abi: TreasureStaking
-      startBlock: 2458612
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.5
-      language: wasm/assemblyscript
-      entities:
-        - Deposit
-        - Withdraw
-      abis:
-        - name: TreasureStaking
-          file: ./abis/TreasureStaking.json
-      eventHandlers:
-        - event: Deposit(indexed address,uint256,uint256,uint256)
-          handler: handleDeposit
-        - event: Withdraw(indexed address,uint256,uint256)
-          handler: handleWithdraw
-      file: ./src/mapping.ts
   - name: TreasureMarketplace
     kind: ethereum/contract
     network: arbitrum-one
