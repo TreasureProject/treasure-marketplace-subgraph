@@ -23,6 +23,7 @@ type Collection @entity {
 
 type Listing @entity {
   id: ID!
+  blockTimestamp: BigInt
   buyer: User
   collection: Collection!
   collectionName: String!
@@ -33,7 +34,6 @@ type Listing @entity {
   token: Token!
   tokenName: String
   transactionLink: String
-  transactionValue: BigInt
   user: User!
 }
 

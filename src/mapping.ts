@@ -204,6 +204,7 @@ export function handleItemSold(event: ItemSold): void {
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   let sold = getOrCreateListing(`${listing.id}-${event.logIndex}`);
 
+  sold.blockTimestamp = event.block.timestamp;
   sold.buyer = buyer.toHexString();
   sold.collection = listing.collection;
   sold.collectionName = listing.collectionName;
@@ -214,7 +215,6 @@ export function handleItemSold(event: ItemSold): void {
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
   sold.transactionLink = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`;
-  sold.transactionValue = event.transaction.value;
   sold.user = seller.toHexString();
 
   sold.save();
