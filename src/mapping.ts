@@ -12,6 +12,7 @@ import {
   UpdatePaymentToken,
 } from "../generated/TreasureMarketplace/TreasureMarketplace";
 import {
+  EXPLORER,
   ONE_BI,
   ZERO_BI,
   getOrCreateCollection,
@@ -212,6 +213,7 @@ export function handleItemSold(event: ItemSold): void {
   sold.status = "Sold";
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
+  sold.transaction = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`
   sold.user = seller.toHexString();
 
   sold.save();

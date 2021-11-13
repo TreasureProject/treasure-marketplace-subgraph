@@ -32,6 +32,7 @@ type Listing @entity {
   status: Status!
   token: Token!
   tokenName: String
+  transaction: String
   user: User!
 }
 
