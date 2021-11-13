@@ -37,6 +37,27 @@ dataSources:
         - event: UpdateFee(uint256)
           handler: handleUpdateFee
       file: ./src/mapping.ts
+  # We have Staging in here to remove our test data from our current token quantity
+  - name: TreasureMarketplaceStaging
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0x134569A78306A0F239deaF8890d0f6DDd457Bd06"
+      abi: TreasureMarketplace
+      startBlock: 2983168
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - ItemSold
+      abis:
+        - name: TreasureMarketplace
+          file: ./abis/TreasureMarketplace.json
+      eventHandlers:
+        - event: ItemSold(address,address,address,uint256,uint256,uint256)
+          handler: handleItemSoldStaging
+      file: ./src/mapping.ts
   - name: Treasures
     kind: ethereum/contract
     network: arbitrum-one

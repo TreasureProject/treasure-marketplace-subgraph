@@ -6,7 +6,7 @@ import {
   log,
   store,
 } from "@graphprotocol/graph-ts";
-import { Collection, Listing, Token } from "../generated/schema";
+import { Collection, Listing, Token, UserToken } from "../generated/schema";
 import {
   ItemCanceled,
   ItemListed,
@@ -33,7 +33,7 @@ import {
 
 function formatPrice(number: BigInt): string {
   if (number.isZero()) {
-    return '0'
+    return "0";
   }
 
   let input = number.toString();
@@ -287,6 +287,24 @@ export function handleItemUpdated(event: ItemUpdated): void {
   listing.save();
 
   updateCollectionFloorAndTotal(params.nftAddress);
+}
+
+export function handleItemSoldStaging(event: ItemSold): void {
+  let params = event.params;
+  let buyer = params.buyer;
+
+  let userToken = UserToken.load(
+    getListingId(buyer, params.nftAddress, params.tokenId)
+  );
+
+  if (userToken) {
+    if (params.quantity.equals(userToken.quantity)) {
+      store.remove("UserToken", userToken.id);
+    } else {
+      userToken.quantity = userToken.quantity.minus(params.quantity);
+      userToken.save();
+    }
+  }
 }
 
 export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
