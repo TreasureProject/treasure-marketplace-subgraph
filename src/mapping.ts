@@ -1,4 +1,11 @@
-import { Address, BigInt, TypedMap, log, store } from "@graphprotocol/graph-ts";
+import {
+  Address,
+  BigDecimal,
+  BigInt,
+  TypedMap,
+  log,
+  store,
+} from "@graphprotocol/graph-ts";
 import { Collection, Listing, Token } from "../generated/schema";
 import {
   ItemCanceled,
@@ -210,10 +217,12 @@ export function handleItemSold(event: ItemSold): void {
   sold.collectionName = listing.collectionName;
   sold.expires = ZERO_BI;
   sold.pricePerItem = listing.pricePerItem;
+  sold.nicePrice = new BigDecimal(sold.pricePerItem).truncate(18);
   sold.quantity = quantity;
   sold.status = "Sold";
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
+  sold.totalPrice = sold.nicePrice.times(new BigDecimal(quantity));
   sold.transactionLink = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`;
   sold.user = seller.toHexString();
 
