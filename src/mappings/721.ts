@@ -1,24 +1,13 @@
 import {
-  Address,
-  BigInt,
-  ByteArray,
-  Bytes,
   JSONValue,
   JSONValueKind,
-  crypto,
-  dataSource,
-  ethereum,
-  // i32,
   ipfs,
   json,
   log,
 } from "@graphprotocol/graph-ts";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
-import { Collection, Token, User } from "../../generated/schema";
 import {
   ONE_BI,
-  base64Decode,
-  getName,
   getOrCreateCollection,
   getOrCreateMetadata,
   getOrCreateToken,
@@ -26,7 +15,6 @@ import {
   getOrCreateUserToken,
   getListingId,
   getTokenId,
-  // updateSeller,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -41,17 +29,11 @@ export function handleTransfer(event: Transfer): void {
   let buyer = getOrCreateUser(to.toHexString());
   let userToken = getOrCreateUserToken(getListingId(to, address, tokenId));
 
-  // updateSeller(from.toHexString(), token.id);
-
   let contract = ERC721.bind(address);
   let uri = contract.try_tokenURI(tokenId);
 
   collection.address = address;
   collection.standard = "ERC721";
-
-  // if (collection.tokens.indexOf(token.id) === -1) {
-  //   collection.tokens = collection.tokens.concat([token.id]);
-  // }
 
   token.collection = collection.id;
 
@@ -128,7 +110,6 @@ export function handleTransfer(event: Transfer): void {
   token.name = `Smol Brains #${tokenId.toString()}`;
   token.tokenId = tokenId;
 
-  userToken.blockNumber = event.block.number;
   userToken.quantity = ONE_BI;
   userToken.token = token.id;
   userToken.user = buyer.id;
