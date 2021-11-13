@@ -28,13 +28,13 @@ type Listing @entity {
   collection: Collection!
   collectionName: String!
   expires: BigInt!
-  nicePrice: BigInt
+  nicePrice: String
   pricePerItem: BigInt!
   quantity: BigInt!
   status: Status!
   token: Token!
   tokenName: String
-  totalPrice: BigInt
+  totalPrice: String
   transactionLink: String
   user: User!
 }

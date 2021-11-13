@@ -31,6 +31,21 @@ import {
   getTokenId,
 } from "./helpers";
 
+function formatPrice(number: BigInt): string {
+  if (number.isZero()) {
+    return '0'
+  }
+
+  let input = number.toString();
+  let value = input.slice(0, -18);
+  let decimals = input
+    .slice(-18)
+    .split("0")
+    .join("");
+
+  return [value, decimals.length > 0 ? "." : "", decimals].join("");
+}
+
 function updateCollectionFloorAndTotal(id: Address): void {
   let collection = Collection.load(id.toHexString());
 
@@ -210,20 +225,20 @@ export function handleItemSold(event: ItemSold): void {
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   let sold = getOrCreateListing(`${listing.id}-${event.logIndex}`);
-  let nicePrice = sold.pricePerItem.div(BigInt.fromI32(10).pow(18));
+  let pricePerItem = listing.pricePerItem;
 
   sold.blockTimestamp = event.block.timestamp;
   sold.buyer = buyer.toHexString();
   sold.collection = listing.collection;
   sold.collectionName = listing.collectionName;
   sold.expires = ZERO_BI;
-  sold.pricePerItem = listing.pricePerItem;
-  sold.nicePrice = nicePrice;
+  sold.pricePerItem = pricePerItem;
+  sold.nicePrice = formatPrice(pricePerItem);
   sold.quantity = quantity;
   sold.status = "Sold";
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
-  sold.totalPrice = nicePrice.times(quantity);
+  sold.totalPrice = formatPrice(pricePerItem.times(quantity));
   sold.transactionLink = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`;
   sold.user = seller.toHexString();
 
