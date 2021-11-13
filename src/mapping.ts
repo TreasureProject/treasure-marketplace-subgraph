@@ -210,7 +210,7 @@ export function handleItemSold(event: ItemSold): void {
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   let sold = getOrCreateListing(`${listing.id}-${event.logIndex}`);
-  let nicePrice = new BigDecimal(sold.pricePerItem).truncate(18);
+  let nicePrice = sold.pricePerItem.div(BigInt.fromI32(10).pow(18));
 
   sold.blockTimestamp = event.block.timestamp;
   sold.buyer = buyer.toHexString();
@@ -223,7 +223,7 @@ export function handleItemSold(event: ItemSold): void {
   sold.status = "Sold";
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
-  sold.totalPrice = nicePrice.times(new BigDecimal(quantity));
+  sold.totalPrice = nicePrice.times(quantity);
   sold.transactionLink = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`;
   sold.user = seller.toHexString();
 
