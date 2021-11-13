@@ -1,11 +1,4 @@
-import {
-  Address,
-  BigInt,
-  TypedMap,
-  dataSource,
-  log,
-  store,
-} from "@graphprotocol/graph-ts";
+import { Address, BigInt, TypedMap, log, store } from "@graphprotocol/graph-ts";
 import { Collection, Listing, Token } from "../generated/schema";
 import {
   ItemCanceled,
@@ -28,7 +21,6 @@ import {
   getOrCreateUserToken,
   getListingId,
   getTokenId,
-  // treasuresContracts,
 } from "./helpers";
 
 function updateCollectionFloorAndTotal(id: Address): void {
@@ -159,7 +151,6 @@ export function handleItemListed(event: ItemListed): void {
   collection.listingIds = collection.listingIds.concat([listing.id]);
   collection.totalListings = collection.totalListings.plus(ONE_BI);
 
-  listing.blockNumber = event.block.number;
   listing.collection = token.collection;
   listing.collectionName = collection.name;
   listing.expires = params.expirationTime;
@@ -211,7 +202,6 @@ export function handleItemSold(event: ItemSold): void {
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   let sold = getOrCreateListing(`${listing.id}-${event.logIndex}`);
 
-  sold.blockNumber = event.block.number;
   sold.collection = listing.collection;
   sold.collectionName = listing.collectionName;
   sold.expires = ZERO_BI;

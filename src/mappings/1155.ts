@@ -1,14 +1,6 @@
 import {
-  Address,
-  BigInt,
-  ByteArray,
-  Bytes,
   JSONValue,
   JSONValueKind,
-  crypto,
-  dataSource,
-  ethereum,
-  // i32,
   ipfs,
   json,
   log,
@@ -20,11 +12,8 @@ import {
   TransferSingle,
   URI,
 } from "../../generated/TreasureMarketplace/ERC1155";
-import { Collection, Token, User, UserToken } from "../../generated/schema";
 import {
   STAKING_ADDRESS,
-  ZERO_ADDRESS,
-  base64Decode,
   getName,
   getOrCreateCollection,
   getOrCreateMetadata,
@@ -127,7 +116,6 @@ export function handleTransferSingle(event: TransferSingle): void {
     let toUser = getOrCreateUser(to.toHexString());
     let userToken = getOrCreateUserToken(getListingId(to, address, tokenId));
 
-    userToken.blockNumber = event.block.number;
     userToken.quantity = userToken.quantity.plus(quantity);
     userToken.token = token.id;
     userToken.user = toUser.id;
