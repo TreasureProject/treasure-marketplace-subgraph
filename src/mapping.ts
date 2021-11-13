@@ -213,7 +213,8 @@ export function handleItemSold(event: ItemSold): void {
   sold.status = "Sold";
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
-  sold.transaction = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`
+  sold.transactionLink = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`;
+  sold.transactionValue = event.transaction.value;
   sold.user = seller.toHexString();
 
   sold.save();
