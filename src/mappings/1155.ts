@@ -54,6 +54,12 @@ export function handleTransferSingle(event: TransferSingle): void {
       "treasure-marketplace.mypinata.cloud"
     );
 
+    // Update metadata hash to new one for transfers happening before the update
+    metadataUri = metadataUri.replace(
+      "QmXqHecFPPFgsZivrREchua466pbUF4WTb7SQcfH2f1GK3",
+      "Qmf2a3J62DCA6wWc6pY9xqHWyexqG17srVeAUrXiewSB1Q"
+    );
+
     token.metadataUri = metadataUri;
 
     if (metadataUri.startsWith("https://")) {
@@ -70,8 +76,8 @@ export function handleTransferSingle(event: TransferSingle): void {
         let obj = json.fromBytes(bytes);
 
         if (obj !== null) {
-          function s(v: JSONValue | null): string {
-            return v ? v.toString() : "";
+          function getString(value: JSONValue | null): string {
+            return value ? value.toString() : "";
           }
 
           // This is because the Extra Life metadata is an array of a single object.
@@ -81,13 +87,9 @@ export function handleTransferSingle(event: TransferSingle): void {
           }
 
           let object = obj.toObject();
-          let description = s(object.get("description"));
-          let image = s(object.get("image"));
-          let name = s(object.get("name"));
-
-          log.info("[Metadata (name)]: {}", [name]);
-          log.info("[Metadata (image)]: {}", [image]);
-          log.info("[Metadata (description)]: {}", [description]);
+          let description = getString(object.get("description"));
+          let image = getString(object.get("image"));
+          let name = getString(object.get("name"));
 
           let metadata = getOrCreateMetadata(token.id);
 
