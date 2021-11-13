@@ -23,15 +23,19 @@ type Collection @entity {
 
 type Listing @entity {
   id: ID!
-  blockNumber: BigInt!
+  blockTimestamp: BigInt
+  buyer: User
   collection: Collection!
   collectionName: String!
   expires: BigInt!
+  nicePrice: String
   pricePerItem: BigInt!
   quantity: BigInt!
   status: Status!
   token: Token!
   tokenName: String
+  totalPrice: String
+  transactionLink: String
   user: User!
 }
 
@@ -61,7 +65,6 @@ type User @entity {
 
 type UserToken @entity {
   id: ID!
-  blockNumber: BigInt!
   quantity: BigInt!
   token: Token!
   user: User!

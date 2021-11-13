@@ -1,8 +1,8 @@
 import {
   Address,
+  BigDecimal,
   BigInt,
   TypedMap,
-  dataSource,
   log,
   store,
 } from "@graphprotocol/graph-ts";
@@ -19,6 +19,7 @@ import {
   UpdatePaymentToken,
 } from "../generated/TreasureMarketplace/TreasureMarketplace";
 import {
+  EXPLORER,
   ONE_BI,
   ZERO_BI,
   getOrCreateCollection,
@@ -28,8 +29,22 @@ import {
   getOrCreateUserToken,
   getListingId,
   getTokenId,
-  // treasuresContracts,
 } from "./helpers";
+
+function formatPrice(number: BigInt): string {
+  if (number.isZero()) {
+    return '0'
+  }
+
+  let input = number.toString();
+  let value = input.slice(0, -18);
+  let decimals = input
+    .slice(-18)
+    .split("0")
+    .join("");
+
+  return [value, decimals.length > 0 ? "." : "", decimals].join("");
+}
 
 function updateCollectionFloorAndTotal(id: Address): void {
   let collection = Collection.load(id.toHexString());
@@ -159,7 +174,6 @@ export function handleItemListed(event: ItemListed): void {
   collection.listingIds = collection.listingIds.concat([listing.id]);
   collection.totalListings = collection.totalListings.plus(ONE_BI);
 
-  listing.blockNumber = event.block.number;
   listing.collection = token.collection;
   listing.collectionName = collection.name;
   listing.expires = params.expirationTime;
@@ -187,6 +201,7 @@ export function handleItemSold(event: ItemSold): void {
   let params = event.params;
   let quantity = params.quantity;
   let seller = params.seller;
+  let buyer = params.buyer;
 
   let listing = getOrCreateListing(
     getListingId(seller, params.nftAddress, params.tokenId)
@@ -210,16 +225,21 @@ export function handleItemSold(event: ItemSold): void {
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   let sold = getOrCreateListing(`${listing.id}-${event.logIndex}`);
+  let pricePerItem = listing.pricePerItem;
 
-  sold.blockNumber = event.block.number;
+  sold.blockTimestamp = event.block.timestamp;
+  sold.buyer = buyer.toHexString();
   sold.collection = listing.collection;
   sold.collectionName = listing.collectionName;
   sold.expires = ZERO_BI;
-  sold.pricePerItem = listing.pricePerItem;
+  sold.pricePerItem = pricePerItem;
+  sold.nicePrice = formatPrice(pricePerItem);
   sold.quantity = quantity;
   sold.status = "Sold";
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
+  sold.totalPrice = formatPrice(pricePerItem.times(quantity));
+  sold.transactionLink = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`;
   sold.user = seller.toHexString();
 
   sold.save();
