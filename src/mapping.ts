@@ -178,6 +178,7 @@ export function handleItemSold(event: ItemSold): void {
   let params = event.params;
   let quantity = params.quantity;
   let seller = params.seller;
+  let buyer = params.buyer;
 
   let listing = getOrCreateListing(
     getListingId(seller, params.nftAddress, params.tokenId)
@@ -202,6 +203,7 @@ export function handleItemSold(event: ItemSold): void {
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   let sold = getOrCreateListing(`${listing.id}-${event.logIndex}`);
 
+  sold.buyer = buyer.toHexString();
   sold.collection = listing.collection;
   sold.collectionName = listing.collectionName;
   sold.expires = ZERO_BI;

@@ -23,6 +23,7 @@ type Collection @entity {
 
 type Listing @entity {
   id: ID!
+  buyer: User
   collection: Collection!
   collectionName: String!
   expires: BigInt!
