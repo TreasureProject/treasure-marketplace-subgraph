@@ -1,5 +1,5 @@
 import * as ERC1155 from "./1155";
-import { log, store } from "@graphprotocol/graph-ts";
+import { log } from "@graphprotocol/graph-ts";
 import {
   TransferBatch,
   TransferSingle,
@@ -9,8 +9,6 @@ import { getOrCreateCollection } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {
   let collection = getOrCreateCollection(event.address.toHexString());
-
-  store.remove("Creator", "TreasureDAO");
 
   collection.name = "Keys";
   collection.save();
