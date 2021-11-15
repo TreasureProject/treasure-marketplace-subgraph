@@ -8,7 +8,7 @@ dataSources:
     source:
       address: "0xeadbc40f5176Fd6eAb8E63cDF55b9caBa216E682"
       abi: TreasureMarketplace
-      startBlock: 9570148
+      startBlock: 9587271
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
