@@ -10,6 +10,8 @@ import { getOrCreateCollection } from "../helpers";
 export function handleTransferSingle(event: TransferSingle): void {
   let collection = getOrCreateCollection(event.address.toHexString());
 
+  store.remove("Collection", "");
+
   collection.name = "Legions Genesis";
 
   collection.save();
