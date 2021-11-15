@@ -1,6 +1,7 @@
-import { log } from "@graphprotocol/graph-ts";
+import { BigDecimal, log } from "@graphprotocol/graph-ts";
 import {
   Collection,
+  Creator,
   Listing,
   Metadata,
   Token,
@@ -22,6 +23,20 @@ export function getOrCreateCollection(id: string): Collection {
   }
 
   return collection;
+}
+
+export function getCreator(name: string, fee: number = 2.5): Creator {
+  let creator = Creator.load(name);
+
+  if (!creator) {
+    creator = new Creator(name);
+
+    creator.name = name;
+    creator.fee = BigDecimal.fromString(fee.toString());
+    creator.save();
+  }
+
+  return creator;
 }
 
 export function getOrCreateListing(id: string): Listing {
@@ -75,4 +90,3 @@ export function getOrCreateUserToken(id: string): UserToken {
 
   return userToken;
 }
-

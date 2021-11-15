@@ -11,6 +11,7 @@ enum TokenStandard {
 type Collection @entity {
   id: ID!
   address: Bytes!
+  creator: Creator!
   floorPrice: BigInt!
   listingIds: [String!]!
   listings: [Listing!]! @derivedFrom(field: "collection")
@@ -19,6 +20,12 @@ type Collection @entity {
   symbol: String
   tokens: [Token!]! @derivedFrom(field: "collection")
   totalListings: BigInt!
+}
+
+type Creator @entity {
+  id: ID!
+  fee: BigDecimal!
+  name: String!
 }
 
 type Listing @entity {
