@@ -11,7 +11,6 @@ export function handleTransferSingle(event: TransferSingle): void {
   let collection = getOrCreateCollection(event.address.toHexString());
 
   collection.name = "Seed of Life";
-
   collection.save();
 
   ERC1155.handleTransferSingle(event);

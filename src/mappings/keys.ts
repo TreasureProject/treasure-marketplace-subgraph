@@ -1,5 +1,5 @@
 import * as ERC1155 from "./1155";
-import { log, store } from "@graphprotocol/graph-ts";
+import { log } from "@graphprotocol/graph-ts";
 import {
   TransferBatch,
   TransferSingle,
@@ -11,7 +11,6 @@ export function handleTransferSingle(event: TransferSingle): void {
   let collection = getOrCreateCollection(event.address.toHexString());
 
   collection.name = "Keys";
-
   collection.save();
 
   ERC1155.handleTransferSingle(event);

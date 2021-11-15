@@ -14,6 +14,7 @@ import {
 } from "../../generated/TreasureMarketplace/ERC1155";
 import {
   STAKING_ADDRESS,
+  getCreator,
   getName,
   getOrCreateCollection,
   getOrCreateMetadata,
@@ -40,6 +41,10 @@ export function handleTransferSingle(event: TransferSingle): void {
 
   collection.address = address;
   collection.standard = "ERC1155";
+
+  if (!collection.creator) {
+    collection.creator = getCreator("TreasureDAO", 0).id;
+  }
 
   token.collection = collection.id;
 
