@@ -10,8 +10,9 @@ import { getOrCreateCollection } from "../helpers";
 export function handleTransferSingle(event: TransferSingle): void {
   let collection = getOrCreateCollection(event.address.toHexString());
 
-  collection.name = "Keys";
+  store.remove("Creator", "TreasureDAO");
 
+  collection.name = "Keys";
   collection.save();
 
   ERC1155.handleTransferSingle(event);

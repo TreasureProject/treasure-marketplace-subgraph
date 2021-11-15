@@ -43,7 +43,7 @@ export function handleTransferSingle(event: TransferSingle): void {
   collection.standard = "ERC1155";
 
   if (!collection.creator) {
-    collection.creator = getCreator("TreasureDAO").id;
+    collection.creator = getCreator("TreasureDAO", 0).id;
   }
 
   token.collection = collection.id;

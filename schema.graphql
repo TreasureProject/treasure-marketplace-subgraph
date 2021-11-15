@@ -24,6 +24,7 @@ type Collection @entity {
 
 type Creator @entity {
   id: ID!
+  collections: [Collection!]! @derivedFrom(field: "creator")
   fee: BigDecimal!
   name: String!
 }
