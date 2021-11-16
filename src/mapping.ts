@@ -220,14 +220,10 @@ export function handleItemSold(event: ItemSold): void {
     listing.save();
   }
 
-  if (Listing.load(`${listing.id}-${event.logIndex}`)) {
-    log.info("handleItemSoldRemoveOldListing: {}, logIndex: {}", [
-      listing.id,
-      event.logIndex.toString(),
-    ]);
+  let collection = getOrCreateCollection(listing.collection);
 
-    store.remove("Listing", `${listing.id}-${event.logIndex}`);
-  }
+  collection.totalSales = collection.totalSales.plus(ONE_BI);
+  collection.save();
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   let sold = getOrCreateListing(`${listing.id}-${listing.blockTimestamp}`);
