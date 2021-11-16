@@ -221,10 +221,11 @@ export function handleItemSold(event: ItemSold): void {
   }
 
   if (Listing.load(`${listing.id}-${event.logIndex}`)) {
-    log.info("Removing old listing {}, logIndex: {}", [
+    log.info("handleItemSoldRemoveOldListing: {}, logIndex: {}", [
       listing.id,
       event.logIndex.toString(),
     ]);
+
     store.remove("Listing", `${listing.id}-${event.logIndex}`);
   }
 
