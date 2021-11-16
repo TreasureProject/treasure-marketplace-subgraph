@@ -19,6 +19,7 @@ export function getOrCreateCollection(id: string): Collection {
     collection.floorPrice = ZERO_BI;
     collection.listingIds = [];
     collection.totalListings = ZERO_BI;
+    collection.totalSales = ZERO_BI;
     collection.save();
   }
 
