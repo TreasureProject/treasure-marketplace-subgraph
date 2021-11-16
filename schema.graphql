@@ -31,7 +31,7 @@ type Creator @entity {
 
 type Listing @entity {
   id: ID!
-  blockTimestamp: BigInt
+  blockTimestamp: BigInt!
   buyer: User
   collection: Collection!
   collectionName: String!

@@ -174,6 +174,7 @@ export function handleItemListed(event: ItemListed): void {
   collection.listingIds = collection.listingIds.concat([listing.id]);
   collection.totalListings = collection.totalListings.plus(ONE_BI);
 
+  listing.blockTimestamp = event.block.timestamp;
   listing.collection = token.collection;
   listing.collectionName = collection.name;
   listing.expires = params.expirationTime;
@@ -219,13 +220,19 @@ export function handleItemSold(event: ItemSold): void {
     listing.save();
   }
 
-  if (Listing.load(`${listing.id}-sold`)) {
-    store.remove("Listing", `${listing.id}-sold`);
+  if (Listing.load(`${listing.id}-${event.logIndex}`)) {
+    log.info("handleItemSoldRemoveOldListing: {}, logIndex: {}", [
+      listing.id,
+      event.logIndex.toString(),
+    ]);
+
+    store.remove("Listing", `${listing.id}-${event.logIndex}`);
   }
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
-  let sold = getOrCreateListing(`${listing.id}-${event.logIndex}`);
+  let sold = getOrCreateListing(`${listing.id}-${listing.blockTimestamp}`);
   let pricePerItem = listing.pricePerItem;
+  let updatedQuantity = sold.quantity ? sold.quantity.plus(quantity) : quantity;
 
   sold.blockTimestamp = event.block.timestamp;
   sold.buyer = buyer.toHexString();
@@ -234,11 +241,11 @@ export function handleItemSold(event: ItemSold): void {
   sold.expires = ZERO_BI;
   sold.pricePerItem = pricePerItem;
   sold.nicePrice = formatPrice(pricePerItem);
-  sold.quantity = quantity;
+  sold.quantity = updatedQuantity;
   sold.status = "Sold";
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
-  sold.totalPrice = formatPrice(pricePerItem.times(quantity));
+  sold.totalPrice = formatPrice(pricePerItem.times(updatedQuantity));
   sold.transactionLink = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`;
   sold.user = seller.toHexString();
 
@@ -278,6 +285,10 @@ export function handleItemUpdated(event: ItemUpdated): void {
 
       userToken.save();
     }
+  }
+
+  if (!listing.pricePerItem.equals(params.pricePerItem)) {
+    listing.blockTimestamp = event.block.timestamp;
   }
 
   listing.quantity = params.quantity;
