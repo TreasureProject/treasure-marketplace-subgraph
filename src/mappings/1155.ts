@@ -1,11 +1,4 @@
-import {
-  JSONValue,
-  JSONValueKind,
-  ipfs,
-  json,
-  log,
-  store,
-} from "@graphprotocol/graph-ts";
+import { log, store } from "@graphprotocol/graph-ts";
 import {
   ERC1155,
   TransferBatch,
@@ -17,12 +10,12 @@ import {
   getCreator,
   getName,
   getOrCreateCollection,
-  getOrCreateMetadata,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
   getListingId,
   getTokenId,
+  addMetadataToToken,
 } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {
@@ -65,49 +58,10 @@ export function handleTransferSingle(event: TransferSingle): void {
       "Qmf2a3J62DCA6wWc6pY9xqHWyexqG17srVeAUrXiewSB1Q"
     );
 
+    addMetadataToToken(metadataUri, token.id, tokenId);
+
+    token.metadata = token.id;
     token.metadataUri = metadataUri;
-
-    if (metadataUri.startsWith("https://")) {
-      let bytes = ipfs.cat(
-        metadataUri.replace(
-          "https://treasure-marketplace.mypinata.cloud/ipfs/",
-          ""
-        )
-      );
-
-      if (bytes === null) {
-        log.info("[IPFS] Null bytes for token {}", [tokenId.toString()]);
-      } else {
-        let obj = json.fromBytes(bytes);
-
-        if (obj !== null) {
-          function getString(value: JSONValue | null): string {
-            return value ? value.toString() : "";
-          }
-
-          // This is because the Extra Life metadata is an array of a single object.
-          // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
-          if (obj.kind === JSONValueKind.ARRAY) {
-            obj = obj.toArray()[0];
-          }
-
-          let object = obj.toObject();
-          let description = getString(object.get("description"));
-          let image = getString(object.get("image"));
-          let name = getString(object.get("name"));
-
-          let metadata = getOrCreateMetadata(token.id);
-
-          metadata.description = description;
-          metadata.image = image;
-          metadata.name = name;
-
-          metadata.save();
-
-          token.metadata = metadata.id;
-        }
-      }
-    }
   }
 
   if (STAKING_ADDRESS == to.toHexString()) {

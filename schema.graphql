@@ -18,6 +18,7 @@ type Collection @entity {
   name: String!
   standard: TokenStandard
   symbol: String
+  tokenIds: [String!]!
   tokens: [Token!]! @derivedFrom(field: "collection")
   totalListings: BigInt!
   totalSales: BigInt!
@@ -50,9 +51,9 @@ type Listing @entity {
 
 type Metadata @entity {
   id: ID!
-  description: String
-  image: String
-  name: String
+  description: String!
+  image: String!
+  name: String!
 }
 
 type Token @entity {

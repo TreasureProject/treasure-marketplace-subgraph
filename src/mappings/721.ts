@@ -1,20 +1,15 @@
-import {
-  JSONValue,
-  JSONValueKind,
-  ipfs,
-  json,
-  log,
-} from "@graphprotocol/graph-ts";
+import { Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
+  ZERO_BI,
   getOrCreateCollection,
-  getOrCreateMetadata,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
   getListingId,
   getTokenId,
+  addMetadataToToken,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -38,84 +33,37 @@ export function handleTransfer(event: Transfer): void {
   token.collection = collection.id;
 
   if (!uri.reverted) {
-    let metadataUri = uri.value.endsWith(".json")
-      ? uri.value
-      : `${uri.value}${tokenId}.json`;
+    token.metadataUri = uri.value;
 
-    // TODO: This is okay for now until contracts are updated
-    metadataUri = metadataUri.replace(
-      "gateway.pinata.cloud",
-      "treasure-marketplace.mypinata.cloud"
-    );
+    addMetadataToToken(uri.value, token.id, tokenId);
+  } else if (collection.name == "Smol Brains" && tokenId.equals(ZERO_BI)) {
+    // This token was transferred on contract creation so there is no metadataUri yet
+    let metadataUri =
+      "https://treasure-marketplace.mypinata.cloud/ipfs/QmZg7bqH36fnKUcmKDhqGm65j5hbFeDZcogoxxiFMLeybE/0/0";
 
-    token.metadataUri = `${uri.value}${tokenId}.json`;
+    addMetadataToToken(metadataUri, token.id, tokenId);
 
-    if (metadataUri.startsWith("https://")) {
-      let bytes = ipfs.cat(
-        metadataUri.replace(
-          "https://treasure-marketplace.mypinata.cloud/ipfs/",
-          ""
-        )
-      );
-
-      if (bytes === null) {
-        log.info("[IPFS] Null bytes for token {}", [tokenId.toString()]);
-      } else {
-        let obj = json.fromBytes(bytes);
-
-        if (obj !== null) {
-          function s(v: JSONValue | null): string {
-            return v ? v.toString() : "";
-          }
-
-          // This is because the Extra Life metadata is an array of a single object.
-          // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
-          if (obj.kind === JSONValueKind.ARRAY) {
-            obj = obj.toArray()[0];
-          }
-
-          let object = obj.toObject();
-          let description = s(object.get("description"));
-          let image = s(object.get("image"));
-          let name = s(object.get("name"));
-
-          log.info("[Metadata (name)]: {}", [name]);
-          log.info("[Metadata (image)]: {}", [image]);
-          log.info("[Metadata (description)]: {}", [description]);
-
-          let metadata = getOrCreateMetadata(token.id);
-
-          metadata.description = description;
-          metadata.image = image;
-          metadata.name = name;
-
-          metadata.save();
-
-          token.metadata = metadata.id;
-        }
-      }
-    } else if (uri.value.includes("smolbrains")) {
-      let metadata = getOrCreateMetadata(token.id);
-
-      metadata.description = "Smol Brains";
-      metadata.image = "/img/smolbrains.png";
-      metadata.name = `Smol Brains #${tokenId.toString()}`;
-
-      metadata.save();
-
-      token.metadata = metadata.id;
-    }
+    token.metadataUri = metadataUri;
   }
 
-  token.name = `Smol Brains #${tokenId.toString()}`;
+  let metadata = Metadata.load(token.id);
+
+  if (metadata) {
+    token.name = `${metadata.description} ${metadata.name}`;
+  } else {
+    token.name = `${collection.name} ${`#${tokenId.toString()}`}`;
+  }
+
+  token.metadata = token.id;
   token.tokenId = tokenId;
 
   userToken.quantity = ONE_BI;
   userToken.token = token.id;
   userToken.user = buyer.id;
 
+  collection.tokenIds = collection.tokenIds.concat([userToken.id]);
+
   collection.save();
   token.save();
   userToken.save();
-  buyer.save();
 }
