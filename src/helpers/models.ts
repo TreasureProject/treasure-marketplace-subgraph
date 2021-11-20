@@ -132,7 +132,10 @@ export function addMetadataToToken(
         let metadata = getOrCreateMetadata(id);
 
         metadata.description = description;
-        metadata.image = image.replace(IPFS_GATEWAY, "ipfs://");
+        metadata.image = image.replace(
+          "https://gateway.pinata.cloud/ipfs/",
+          "ipfs://"
+        );
         metadata.name = name;
 
         metadata.save();
