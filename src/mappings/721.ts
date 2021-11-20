@@ -1,15 +1,15 @@
-import { JSONValue, ipfs, json, log } from "@graphprotocol/graph-ts";
+import { Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
-  IPFS_GATEWAY,
   ONE_BI,
+  ZERO_BI,
   getOrCreateCollection,
-  getOrCreateMetadata,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
   getListingId,
   getTokenId,
+  addMetadataToToken,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -33,47 +33,28 @@ export function handleTransfer(event: Transfer): void {
   token.collection = collection.id;
 
   if (!uri.reverted) {
-    let metadataUri = uri.value;
+    token.metadataUri = uri.value;
+
+    addMetadataToToken(uri.value, token.id, tokenId);
+  } else if (collection.name == "Smol Brains" && tokenId.equals(ZERO_BI)) {
+    // This token was transferred on contract creation so there is no metadataUri yet
+    let metadataUri =
+      "https://treasure-marketplace.mypinata.cloud/ipfs/QmZg7bqH36fnKUcmKDhqGm65j5hbFeDZcogoxxiFMLeybE/0/0";
+
+    addMetadataToToken(metadataUri, token.id, tokenId);
 
     token.metadataUri = metadataUri;
-
-    if (metadataUri.startsWith("https://")) {
-      let bytes = ipfs.cat(metadataUri.replace(IPFS_GATEWAY, ""));
-
-      if (bytes === null) {
-        log.info("[IPFS] Null bytes for token {}", [tokenId.toString()]);
-      } else {
-        let obj = json.fromBytes(bytes);
-
-        if (obj !== null) {
-          function getString(value: JSONValue | null): string {
-            return value ? value.toString() : "";
-          }
-
-          let object = obj.toObject();
-          let description = getString(object.get("description"));
-          let image = getString(object.get("image"));
-          let name = getString(object.get("name"));
-
-          let metadata = getOrCreateMetadata(token.id);
-
-          metadata.description = description;
-          metadata.image = image;
-          metadata.name = name;
-
-          metadata.save();
-
-          token.metadata = metadata.id;
-          token.name = `${description} ${name}`;
-        }
-      }
-    }
   }
 
-  if (!token.name) {
-    token.name = `${collection.name} #${tokenId.toString()}`;
+  let metadata = Metadata.load(token.id);
+
+  if (metadata) {
+    token.name = `${metadata.description} ${metadata.name}`;
+  } else {
+    token.name = `${collection.name} ${`#${tokenId.toString()}`}`;
   }
 
+  token.metadata = token.id;
   token.tokenId = tokenId;
 
   userToken.quantity = ONE_BI;

@@ -50,9 +50,9 @@ type Listing @entity {
 
 type Metadata @entity {
   id: ID!
-  description: String
-  image: String
-  name: String
+  description: String!
+  image: String!
+  name: String!
 }
 
 type Token @entity {
