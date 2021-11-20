@@ -66,4 +66,5 @@ export function handleTransfer(event: Transfer): void {
   collection.save();
   token.save();
   userToken.save();
+  buyer.save();
 }
