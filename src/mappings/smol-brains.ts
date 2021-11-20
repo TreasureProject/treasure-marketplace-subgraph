@@ -2,7 +2,6 @@ import * as ERC721 from "./721";
 import { Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   getCreator,
-  getListingId,
   getOrCreateCollection,
   getOrCreateUserToken,
   ONE_BI,
