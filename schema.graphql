@@ -18,6 +18,7 @@ type Collection @entity {
   name: String!
   standard: TokenStandard
   symbol: String
+  tokenIds: [String!]!
   tokens: [Token!]! @derivedFrom(field: "collection")
   totalListings: BigInt!
   totalSales: BigInt!

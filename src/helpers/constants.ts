@@ -9,6 +9,11 @@ export const EXPLORER =
 
 export const IPFS_GATEWAY = "https://treasure-marketplace.mypinata.cloud/ipfs/";
 
+export const SMOLBRAIN_ADDRESS =
+  dataSource.network() == "rinkeby"
+    ? "0x4FeeA06250D9f315a6a454c9c8a7fcBCf8701210"
+    : ZERO_ADDRESS;
+
 export const STAKING_ADDRESS =
   dataSource.network() == "rinkeby"
     ? "0x0be9c4956101a306bac8093329c6c696c047b8f6"
