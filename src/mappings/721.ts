@@ -61,6 +61,8 @@ export function handleTransfer(event: Transfer): void {
   userToken.token = token.id;
   userToken.user = buyer.id;
 
+  collection.tokenIds = collection.tokenIds.concat([userToken.id]);
+
   collection.save();
   token.save();
   userToken.save();

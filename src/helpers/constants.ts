@@ -11,8 +11,8 @@ export const IPFS_GATEWAY = "https://treasure-marketplace.mypinata.cloud/ipfs/";
 
 export const SMOLBRAIN_ADDRESS =
   dataSource.network() == "rinkeby"
-    ? "0x4FeeA06250D9f315a6a454c9c8a7fcBCf8701210"
-    : ZERO_ADDRESS;
+    ? "0x4feea06250d9f315a6a454c9c8a7fcbcf8701210"
+    : "0x6325439389e0797ab35752b4f43a14c004f22a9c";
 
 export const STAKING_ADDRESS =
   dataSource.network() == "rinkeby"
