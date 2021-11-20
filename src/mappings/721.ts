@@ -1,12 +1,7 @@
-import {
-  JSONValue,
-  JSONValueKind,
-  ipfs,
-  json,
-  log,
-} from "@graphprotocol/graph-ts";
+import { JSONValue, ipfs, json, log } from "@graphprotocol/graph-ts";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
+  IPFS_GATEWAY,
   ONE_BI,
   getOrCreateCollection,
   getOrCreateMetadata,
@@ -38,25 +33,12 @@ export function handleTransfer(event: Transfer): void {
   token.collection = collection.id;
 
   if (!uri.reverted) {
-    let metadataUri = uri.value.endsWith(".json")
-      ? uri.value
-      : `${uri.value}${tokenId}.json`;
+    let metadataUri = uri.value;
 
-    // TODO: This is okay for now until contracts are updated
-    metadataUri = metadataUri.replace(
-      "gateway.pinata.cloud",
-      "treasure-marketplace.mypinata.cloud"
-    );
-
-    token.metadataUri = `${uri.value}${tokenId}.json`;
+    token.metadataUri = metadataUri;
 
     if (metadataUri.startsWith("https://")) {
-      let bytes = ipfs.cat(
-        metadataUri.replace(
-          "https://treasure-marketplace.mypinata.cloud/ipfs/",
-          ""
-        )
-      );
+      let bytes = ipfs.cat(metadataUri.replace(IPFS_GATEWAY, ""));
 
       if (bytes === null) {
         log.info("[IPFS] Null bytes for token {}", [tokenId.toString()]);
@@ -64,24 +46,14 @@ export function handleTransfer(event: Transfer): void {
         let obj = json.fromBytes(bytes);
 
         if (obj !== null) {
-          function s(v: JSONValue | null): string {
-            return v ? v.toString() : "";
-          }
-
-          // This is because the Extra Life metadata is an array of a single object.
-          // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
-          if (obj.kind === JSONValueKind.ARRAY) {
-            obj = obj.toArray()[0];
+          function getString(value: JSONValue | null): string {
+            return value ? value.toString() : "";
           }
 
           let object = obj.toObject();
-          let description = s(object.get("description"));
-          let image = s(object.get("image"));
-          let name = s(object.get("name"));
-
-          log.info("[Metadata (name)]: {}", [name]);
-          log.info("[Metadata (image)]: {}", [image]);
-          log.info("[Metadata (description)]: {}", [description]);
+          let description = getString(object.get("description"));
+          let image = getString(object.get("image"));
+          let name = getString(object.get("name"));
 
           let metadata = getOrCreateMetadata(token.id);
 
@@ -92,22 +64,16 @@ export function handleTransfer(event: Transfer): void {
           metadata.save();
 
           token.metadata = metadata.id;
+          token.name = `${description} ${name}`;
         }
       }
-    } else if (uri.value.includes("smolbrains")) {
-      let metadata = getOrCreateMetadata(token.id);
-
-      metadata.description = "Smol Brains";
-      metadata.image = "/img/smolbrains.png";
-      metadata.name = `Smol Brains #${tokenId.toString()}`;
-
-      metadata.save();
-
-      token.metadata = metadata.id;
     }
   }
 
-  token.name = `Smol Brains #${tokenId.toString()}`;
+  if (!token.name) {
+    token.name = `${collection.name} #${tokenId.toString()}`;
+  }
+
   token.tokenId = tokenId;
 
   userToken.quantity = ONE_BI;
@@ -117,5 +83,4 @@ export function handleTransfer(event: Transfer): void {
   collection.save();
   token.save();
   userToken.save();
-  buyer.save();
 }

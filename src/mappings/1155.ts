@@ -13,6 +13,7 @@ import {
   URI,
 } from "../../generated/TreasureMarketplace/ERC1155";
 import {
+  IPFS_GATEWAY,
   STAKING_ADDRESS,
   getCreator,
   getName,
@@ -68,12 +69,7 @@ export function handleTransferSingle(event: TransferSingle): void {
     token.metadataUri = metadataUri;
 
     if (metadataUri.startsWith("https://")) {
-      let bytes = ipfs.cat(
-        metadataUri.replace(
-          "https://treasure-marketplace.mypinata.cloud/ipfs/",
-          ""
-        )
-      );
+      let bytes = ipfs.cat(metadataUri.replace(IPFS_GATEWAY, ""));
 
       if (bytes === null) {
         log.info("[IPFS] Null bytes for token {}", [tokenId.toString()]);

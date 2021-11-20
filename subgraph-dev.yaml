@@ -8,7 +8,7 @@ dataSources:
     source:
       address: "0xeadbc40f5176Fd6eAb8E63cDF55b9caBa216E682"
       abi: TreasureMarketplace
-      startBlock: 9587271
+      startBlock: 9672376
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -197,9 +197,9 @@ dataSources:
     kind: ethereum/contract
     network: rinkeby
     source:
-      address: "0xd72e14b8bcc89742b3f366ea80d175c3c4205b1d"
+      address: "0x03b3C8779a1a0dd758D81B33694361610FdC8fB0"
       abi: ERC721
-      startBlock: 9570148
+      startBlock: 9672376
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
