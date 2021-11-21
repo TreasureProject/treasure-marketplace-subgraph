@@ -6,13 +6,14 @@ import {
   getOrCreateUserToken,
   ONE_BI,
   SMOLBRAIN_ADDRESS,
+  updateCollectionFloorAndTotal,
   ZERO_BI,
 } from "../helpers";
 import {
   DropSchool,
   JoinSchool,
 } from "../../generated/Smol Brains School/ERC721";
-import { log, store } from "@graphprotocol/graph-ts";
+import { Address, log, store } from "@graphprotocol/graph-ts";
 import { Listing } from "../../generated/schema";
 
 export function handleTransfer(event: Transfer): void {
@@ -56,6 +57,11 @@ export function handleDropSchool(event: DropSchool): void {
       if (listing) {
         listing.quantity = ONE_BI;
         listing.save();
+
+        collection.totalListings = collection.totalListings.plus(ONE_BI);
+        collection.save();
+
+        updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS))
       }
     }
   }
@@ -84,6 +90,11 @@ export function handleJoinSchool(event: JoinSchool): void {
       if (listing) {
         listing.quantity = ZERO_BI;
         listing.save();
+
+        collection.totalListings = collection.totalListings.minus(ONE_BI);
+        collection.save();
+
+        updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS))
       }
     }
   }
