@@ -1,12 +1,5 @@
-import {
-  Address,
-  BigDecimal,
-  BigInt,
-  TypedMap,
-  log,
-  store,
-} from "@graphprotocol/graph-ts";
-import { Collection, Listing, Token, UserToken } from "../generated/schema";
+import { BigInt, log, store } from "@graphprotocol/graph-ts";
+import { Listing, UserToken } from "../generated/schema";
 import {
   ItemCanceled,
   ItemListed,
@@ -29,6 +22,7 @@ import {
   getOrCreateUserToken,
   getListingId,
   getTokenId,
+  updateCollectionFloorAndTotal,
 } from "./helpers";
 
 function formatPrice(number: BigInt): string {
@@ -44,67 +38,6 @@ function formatPrice(number: BigInt): string {
     .join("");
 
   return [value, decimals.length > 0 ? "." : "", decimals].join("");
-}
-
-function updateCollectionFloorAndTotal(id: Address): void {
-  let collection = Collection.load(id.toHexString());
-
-  if (collection == null) {
-    log.info("[updateCollectionFloorAndTotal]: Found Null Collection {}", [
-      id.toHexString(),
-    ]);
-
-    return;
-  }
-
-  let floorPrices = new TypedMap<string, BigInt>();
-  let listings = collection.listingIds;
-
-  collection.floorPrice = ZERO_BI;
-
-  for (let index = 0; index < listings.length; index++) {
-    let listing = Listing.load(listings[index]);
-
-    if (listing !== null && listing.status == "Active") {
-      let floorPrice = collection.floorPrice;
-      let pricePerItem = listing.pricePerItem;
-
-      if (collection.standard == "ERC1155") {
-        let tokenFloorPrice = floorPrices.get(listing.token);
-
-        if (
-          !tokenFloorPrice ||
-          (tokenFloorPrice && tokenFloorPrice.gt(pricePerItem))
-        ) {
-          floorPrices.set(listing.token, pricePerItem);
-        }
-      }
-
-      if (floorPrice.isZero() || floorPrice.gt(pricePerItem)) {
-        collection.floorPrice = pricePerItem;
-      }
-    } else {
-      collection.listingIds = collection.listingIds
-        .slice(0, index)
-        .concat(collection.listingIds.slice(index + 1));
-    }
-  }
-
-  let entries = floorPrices.entries;
-
-  for (let index = 0; index < entries.length; index++) {
-    let entry = entries[index];
-    let token = Token.load(entry.key);
-
-    if (token) {
-      token.floorPrice = entry.value;
-      token.save();
-    }
-  }
-
-  collection.totalListings = BigInt.fromI32(collection.listingIds.length);
-
-  collection.save();
 }
 
 export function handleItemCanceled(event: ItemCanceled): void {
