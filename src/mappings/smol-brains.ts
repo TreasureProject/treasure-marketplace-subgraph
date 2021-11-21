@@ -6,12 +6,14 @@ import {
   getOrCreateUserToken,
   ONE_BI,
   SMOLBRAIN_ADDRESS,
+  ZERO_BI,
 } from "../helpers";
 import {
   DropSchool,
   JoinSchool,
 } from "../../generated/Smol Brains School/ERC721";
 import { log, store } from "@graphprotocol/graph-ts";
+import { Listing } from "../../generated/schema";
 
 export function handleTransfer(event: Transfer): void {
   let collection = getOrCreateCollection(event.address.toHexString());
@@ -25,15 +27,17 @@ export function handleTransfer(event: Transfer): void {
 
 export function handleDropSchool(event: DropSchool): void {
   let collection = getOrCreateCollection(SMOLBRAIN_ADDRESS);
-  let tokenIds = collection.tokenIds;
+  let userTokenIds = collection.tokenIds;
+  let listingIds = collection.listingIds;
+  let tokenId = event.params.tokenId.toHexString();
 
-  for (let index = 0; index < tokenIds.length; index++) {
-    const tokenId = tokenIds[index];
-    const token = `${SMOLBRAIN_ADDRESS}-${event.params.tokenId.toHexString()}`;
+  for (let index = 0; index < userTokenIds.length; index++) {
+    let userTokenId = userTokenIds[index];
+    let token = `${SMOLBRAIN_ADDRESS}-${tokenId}`;
 
-    if (tokenId.endsWith(token)) {
-      let userToken = getOrCreateUserToken(tokenId);
-      let user = tokenId.split("-")[0];
+    if (userTokenId.endsWith(token)) {
+      let userToken = getOrCreateUserToken(userTokenId);
+      let user = userTokenId.split("-")[0];
 
       userToken.quantity = ONE_BI;
       userToken.token = token;
@@ -42,28 +46,45 @@ export function handleDropSchool(event: DropSchool): void {
       userToken.save();
     }
   }
+
+  for (let index = 0; index < listingIds.length; index++) {
+    let listingId = listingIds[index];
+
+    if (listingId.endsWith(`${SMOLBRAIN_ADDRESS}-${tokenId}`)) {
+      let listing = Listing.load(listingId);
+
+      if (listing) {
+        listing.quantity = ONE_BI;
+        listing.save();
+      }
+    }
+  }
 }
 
 export function handleJoinSchool(event: JoinSchool): void {
   let collection = getOrCreateCollection(SMOLBRAIN_ADDRESS);
-  let tokenIds = collection.tokenIds;
+  let userTokenIds = collection.tokenIds;
+  let listingIds = collection.listingIds;
+  let tokenId = event.params.tokenId.toHexString();
 
-  log.info("handleJoinSchool: {}, match: {}", [
-    tokenIds.length.toString(),
-    `${SMOLBRAIN_ADDRESS}-${event.params.tokenId.toHexString()}`,
-  ]);
+  for (let index = 0; index < userTokenIds.length; index++) {
+    const useTokenId = userTokenIds[index];
 
-  for (let index = 0; index < tokenIds.length; index++) {
-    const tokenId = tokenIds[index];
+    if (tokenId.endsWith(`${SMOLBRAIN_ADDRESS}-${tokenId}`)) {
+      store.remove("UserToken", useTokenId);
+    }
+  }
 
-    log.info("handleJoinSchool: {}", [tokenId]);
+  for (let index = 0; index < listingIds.length; index++) {
+    const listingId = listingIds[index];
 
-    if (
-      tokenId.endsWith(
-        `${SMOLBRAIN_ADDRESS}-${event.params.tokenId.toHexString()}`
-      )
-    ) {
-      store.remove("UserToken", tokenId);
+    if (listingId.endsWith(`${SMOLBRAIN_ADDRESS}-${tokenId}`)) {
+      let listing = Listing.load(listingId);
+
+      if (listing) {
+        listing.quantity = ZERO_BI;
+        listing.save();
+      }
     }
   }
 }
