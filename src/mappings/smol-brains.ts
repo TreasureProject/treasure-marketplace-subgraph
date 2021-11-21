@@ -58,9 +58,6 @@ export function handleDropSchool(event: DropSchool): void {
         listing.quantity = ONE_BI;
         listing.save();
 
-        collection.totalListings = collection.totalListings.plus(ONE_BI);
-        collection.save();
-
         updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS))
       }
     }
@@ -90,9 +87,6 @@ export function handleJoinSchool(event: JoinSchool): void {
       if (listing) {
         listing.quantity = ZERO_BI;
         listing.save();
-
-        collection.totalListings = collection.totalListings.minus(ONE_BI);
-        collection.save();
 
         updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS))
       }

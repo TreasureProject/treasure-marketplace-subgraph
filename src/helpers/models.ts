@@ -166,7 +166,11 @@ export function updateCollectionFloorAndTotal(id: Address): void {
   for (let index = 0; index < listings.length; index++) {
     let listing = Listing.load(listings[index]);
 
-    if (listing !== null && listing.status == "Active") {
+    if (
+      listing !== null &&
+      listing.status == "Active" &&
+      listing.quantity.gt(ZERO_BI)
+    ) {
       let floorPrice = collection.floorPrice;
       let pricePerItem = listing.pricePerItem;
 
