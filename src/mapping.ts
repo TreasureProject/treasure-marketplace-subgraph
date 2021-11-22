@@ -1,5 +1,5 @@
 import { BigInt, log, store } from "@graphprotocol/graph-ts";
-import { Listing, UserToken } from "../generated/schema";
+import { Listing, Student, UserToken } from "../generated/schema";
 import {
   ItemCanceled,
   ItemListed,
@@ -87,8 +87,12 @@ export function handleItemListed(event: ItemListed): void {
   let collection = getOrCreateCollection(token.collection);
 
   let floorPrice = collection.floorPrice;
+  let status = Student.load(tokenId.toHexString()) ? "Hidden" : "Active";
 
-  if (floorPrice.isZero() || floorPrice.gt(pricePerItem)) {
+  if (
+    (floorPrice.isZero() || floorPrice.gt(pricePerItem)) &&
+    status === "Active"
+  ) {
     collection.floorPrice = pricePerItem;
   }
 
@@ -105,7 +109,10 @@ export function handleItemListed(event: ItemListed): void {
   }
 
   collection.listingIds = collection.listingIds.concat([listing.id]);
-  collection.totalListings = collection.totalListings.plus(ONE_BI);
+
+  if (status === "Active") {
+    collection.totalListings = collection.totalListings.plus(ONE_BI);
+  }
 
   listing.blockTimestamp = event.block.timestamp;
   listing.collection = token.collection;
@@ -113,7 +120,7 @@ export function handleItemListed(event: ItemListed): void {
   listing.expires = params.expirationTime;
   listing.pricePerItem = pricePerItem;
   listing.quantity = quantity;
-  listing.status = "Active";
+  listing.status = status;
   listing.token = token.id;
   listing.tokenName = token.name;
   listing.user = seller.toHexString();

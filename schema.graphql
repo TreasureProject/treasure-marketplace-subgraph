@@ -57,6 +57,10 @@ type Metadata @entity {
   name: String!
 }
 
+type Student @entity {
+  id: ID!
+}
+
 type Token @entity {
   id: ID!
   collection: Collection!
