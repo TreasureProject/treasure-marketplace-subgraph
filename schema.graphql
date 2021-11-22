@@ -1,5 +1,6 @@
 enum Status {
   Active
+  Hidden
   Sold
 }
 
