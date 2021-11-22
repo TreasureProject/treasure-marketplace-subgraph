@@ -23,6 +23,7 @@ type Collection @entity {
   tokens: [Token!]! @derivedFrom(field: "collection")
   totalListings: BigInt!
   totalSales: BigInt!
+  totalVolume: BigInt!
 }
 
 type Creator @entity {
