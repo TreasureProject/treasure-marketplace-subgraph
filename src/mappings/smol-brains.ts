@@ -31,7 +31,7 @@ export function handleDropSchool(event: DropSchool): void {
   let listingIds = collection.listingIds;
   let tokenId = event.params.tokenId.toHexString();
 
-  store.remove("Student", tokenId);
+  store.remove("Student", `${SMOLBRAIN_ADDRESS}-${tokenId}`);
 
   for (let index = 0; index < userTokenIds.length; index++) {
     let userTokenId = userTokenIds[index];
@@ -71,7 +71,7 @@ export function handleJoinSchool(event: JoinSchool): void {
   let listingIds = collection.listingIds;
   let tokenId = event.params.tokenId.toHexString();
 
-  let student = new Student(tokenId);
+  let student = new Student(`${SMOLBRAIN_ADDRESS}-${tokenId}`);
 
   student.save();
 

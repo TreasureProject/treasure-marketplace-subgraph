@@ -87,7 +87,7 @@ export function handleItemListed(event: ItemListed): void {
   let collection = getOrCreateCollection(token.collection);
 
   let floorPrice = collection.floorPrice;
-  let status = Student.load(tokenId.toHexString()) ? "Hidden" : "Active";
+  let status = Student.load(token.id) ? "Hidden" : "Active";
 
   if (
     (floorPrice.isZero() || floorPrice.gt(pricePerItem)) &&
