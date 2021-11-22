@@ -7,14 +7,13 @@ import {
   ONE_BI,
   SMOLBRAIN_ADDRESS,
   updateCollectionFloorAndTotal,
-  ZERO_BI,
 } from "../helpers";
 import {
   DropSchool,
   JoinSchool,
 } from "../../generated/Smol Brains School/ERC721";
-import { Address, log, store } from "@graphprotocol/graph-ts";
-import { Listing } from "../../generated/schema";
+import { Address, store } from "@graphprotocol/graph-ts";
+import { Listing, Student } from "../../generated/schema";
 
 export function handleTransfer(event: Transfer): void {
   let collection = getOrCreateCollection(event.address.toHexString());
@@ -31,6 +30,8 @@ export function handleDropSchool(event: DropSchool): void {
   let userTokenIds = collection.tokenIds;
   let listingIds = collection.listingIds;
   let tokenId = event.params.tokenId.toHexString();
+
+  store.remove("Student", tokenId);
 
   for (let index = 0; index < userTokenIds.length; index++) {
     let userTokenId = userTokenIds[index];
@@ -55,10 +56,10 @@ export function handleDropSchool(event: DropSchool): void {
       let listing = Listing.load(listingId);
 
       if (listing) {
-        listing.status = 'Active';
+        listing.status = "Active";
         listing.save();
 
-        updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS))
+        updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS));
       }
     }
   }
@@ -69,6 +70,10 @@ export function handleJoinSchool(event: JoinSchool): void {
   let userTokenIds = collection.tokenIds;
   let listingIds = collection.listingIds;
   let tokenId = event.params.tokenId.toHexString();
+
+  let student = new Student(tokenId);
+
+  student.save();
 
   for (let index = 0; index < userTokenIds.length; index++) {
     const useTokenId = userTokenIds[index];
@@ -85,10 +90,10 @@ export function handleJoinSchool(event: JoinSchool): void {
       let listing = Listing.load(listingId);
 
       if (listing) {
-        listing.status = 'Hidden';
+        listing.status = "Hidden";
         listing.save();
 
-        updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS))
+        updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS));
       }
     }
   }

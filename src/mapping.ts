@@ -1,5 +1,5 @@
 import { BigInt, log, store } from "@graphprotocol/graph-ts";
-import { Listing, UserToken } from "../generated/schema";
+import { Listing, Student, UserToken } from "../generated/schema";
 import {
   ItemCanceled,
   ItemListed,
@@ -113,7 +113,7 @@ export function handleItemListed(event: ItemListed): void {
   listing.expires = params.expirationTime;
   listing.pricePerItem = pricePerItem;
   listing.quantity = quantity;
-  listing.status = "Active";
+  listing.status = Student.load(tokenId.toHexString()) ? "Hidden" : "Active";
   listing.token = token.id;
   listing.tokenName = token.name;
   listing.user = seller.toHexString();
