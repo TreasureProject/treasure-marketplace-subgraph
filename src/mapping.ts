@@ -163,6 +163,9 @@ export function handleItemSold(event: ItemSold): void {
   let collection = getOrCreateCollection(listing.collection);
 
   collection.totalSales = collection.totalSales.plus(ONE_BI);
+  collection.totalVolume = collection.totalVolume.plus(
+    listing.pricePerItem.times(quantity)
+  );
   collection.save();
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
