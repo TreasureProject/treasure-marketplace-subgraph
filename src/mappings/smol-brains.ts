@@ -55,7 +55,7 @@ export function handleDropSchool(event: DropSchool): void {
       let listing = Listing.load(listingId);
 
       if (listing) {
-        listing.quantity = ONE_BI;
+        listing.status = 'Active';
         listing.save();
 
         updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS))
@@ -85,7 +85,7 @@ export function handleJoinSchool(event: JoinSchool): void {
       let listing = Listing.load(listingId);
 
       if (listing) {
-        listing.quantity = ZERO_BI;
+        listing.status = 'Hidden';
         listing.save();
 
         updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS))
