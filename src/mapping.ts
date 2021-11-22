@@ -109,7 +109,10 @@ export function handleItemListed(event: ItemListed): void {
   }
 
   collection.listingIds = collection.listingIds.concat([listing.id]);
-  collection.totalListings = collection.totalListings.plus(ONE_BI);
+
+  if (status === "Active") {
+    collection.totalListings = collection.totalListings.plus(ONE_BI);
+  }
 
   listing.blockTimestamp = event.block.timestamp;
   listing.collection = token.collection;
