@@ -71,12 +71,12 @@ export function handleTransfer(event: Transfer): void {
     let tokenIdIndex = collection.tokenIds.indexOf(seller);
 
     if (listingIdIndex != -1) {
-      collection.totalListings = collection.totalListings.minus(ONE_BI);
-      collection.listingIds = collection.listingIds
-        .slice(0, listingIdIndex)
-        .concat(collection.listingIds.slice(listingIdIndex + 1));
+      // collection.totalListings = collection.totalListings.minus(ONE_BI);
+      // collection.listingIds = collection.listingIds
+      //   .slice(0, listingIdIndex)
+      //   .concat(collection.listingIds.slice(listingIdIndex + 1));
 
-      collection.save();
+      // collection.save();
 
       updateCollectionFloorAndTotal(address);
     }
