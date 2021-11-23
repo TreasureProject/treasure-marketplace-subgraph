@@ -16,6 +16,7 @@ type Collection @entity {
   floorPrice: BigInt!
   listingIds: [String!]!
   listings: [Listing!]! @derivedFrom(field: "collection")
+  missingMetadataIds: [BigInt!]!
   name: String!
   standard: TokenStandard
   symbol: String

@@ -1,7 +1,9 @@
-import { Metadata } from "../../generated/schema";
+import { store } from "@graphprotocol/graph-ts";
+import { Listing, Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
+  ZERO_ADDRESS,
   ZERO_BI,
   getOrCreateCollection,
   getOrCreateToken,
@@ -10,6 +12,8 @@ import {
   getListingId,
   getTokenId,
   addMetadataToToken,
+  removeAtIndex,
+  updateCollectionFloorAndTotal,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -48,7 +52,7 @@ export function handleTransfer(event: Transfer): void {
 
   let metadata = Metadata.load(token.id);
 
-  if (metadata) {
+  if (metadata && metadata.description != "Smol Brains Land") {
     token.name = `${metadata.description} ${metadata.name}`;
   } else {
     token.name = `${collection.name} ${`#${tokenId.toString()}`}`;
@@ -57,11 +61,62 @@ export function handleTransfer(event: Transfer): void {
   token.metadata = token.id;
   token.tokenId = tokenId;
 
+  // Not a mint, remove it from the transferrer
+  if (from.toHexString() != ZERO_ADDRESS) {
+    let seller = getListingId(from, address, tokenId);
+
+    let listingIdIndex = collection.listingIds.indexOf(seller);
+    let tokenIdIndex = collection.tokenIds.indexOf(seller);
+
+    if (listingIdIndex != -1) {
+      let listing = Listing.load(seller);
+
+      // Was called using `safeTransferFrom` and not a sold listing
+      if (
+        listing &&
+        event.transaction.input.toHexString().startsWith("0x42842e0e")
+      ) {
+        store.remove("Listing", listing.id);
+      }
+
+      updateCollectionFloorAndTotal(address);
+    }
+
+    if (tokenIdIndex != -1) {
+      collection.tokenIds = removeAtIndex(collection.tokenIds, tokenIdIndex);
+
+      store.remove("UserToken", seller);
+    }
+  }
+
   userToken.quantity = ONE_BI;
   userToken.token = token.id;
   userToken.user = buyer.id;
 
   collection.tokenIds = collection.tokenIds.concat([userToken.id]);
+
+  // Try fetching missing metadata
+  let metadataIds = collection.missingMetadataIds;
+
+  for (let index = 0; index < metadataIds.length; index++) {
+    let metadataId = metadataIds[index];
+    let uri = contract.try_tokenURI(metadataId);
+
+    if (!uri.reverted) {
+      let metadataTokenId = getTokenId(address, metadataId);
+
+      token.metadataUri = uri.value;
+
+      addMetadataToToken(uri.value, metadataTokenId, metadataId);
+
+      if (Metadata.load(metadataTokenId)) {
+        collection.missingMetadataIds = removeAtIndex(
+          collection.missingMetadataIds,
+          index
+        );
+      }
+    }
+  }
 
   collection.save();
   token.save();

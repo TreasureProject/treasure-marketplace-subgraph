@@ -18,7 +18,7 @@ import {
   User,
   UserToken,
 } from "../../generated/schema";
-import { IPFS_GATEWAY, ZERO_BI } from ".";
+import { IPFS_GATEWAY, ZERO_BI, removeAtIndex } from ".";
 
 export function getOrCreateCollection(id: string): Collection {
   let collection = Collection.load(id);
@@ -28,6 +28,7 @@ export function getOrCreateCollection(id: string): Collection {
 
     collection.floorPrice = ZERO_BI;
     collection.listingIds = [];
+    collection.missingMetadataIds = [];
     collection.tokenIds = [];
     collection.totalListings = ZERO_BI;
     collection.totalSales = ZERO_BI;
@@ -185,9 +186,7 @@ export function updateCollectionFloorAndTotal(id: Address): void {
         collection.floorPrice = pricePerItem;
       }
     } else {
-      collection.listingIds = collection.listingIds
-        .slice(0, index)
-        .concat(collection.listingIds.slice(index + 1));
+      collection.listingIds = removeAtIndex(collection.listingIds, index);
     }
   }
 

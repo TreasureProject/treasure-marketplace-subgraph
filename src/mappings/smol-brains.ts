@@ -1,11 +1,11 @@
 import * as ERC721 from "./721";
 import { Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
+  ONE_BI,
+  SMOLBRAIN_ADDRESS,
   getCreator,
   getOrCreateCollection,
   getOrCreateUserToken,
-  ONE_BI,
-  SMOLBRAIN_ADDRESS,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 import {
@@ -37,7 +37,7 @@ export function handleDropSchool(event: DropSchool): void {
     let userTokenId = userTokenIds[index];
     let token = `${SMOLBRAIN_ADDRESS}-${tokenId}`;
 
-    if (userTokenId.endsWith(token)) {
+    if (userTokenId.endsWith(token) && !Listing.load(userTokenId)) {
       let userToken = getOrCreateUserToken(userTokenId);
       let user = userTokenId.split("-")[0];
 
@@ -76,10 +76,10 @@ export function handleJoinSchool(event: JoinSchool): void {
   student.save();
 
   for (let index = 0; index < userTokenIds.length; index++) {
-    const useTokenId = userTokenIds[index];
+    const userTokenId = userTokenIds[index];
 
     if (tokenId.endsWith(`${SMOLBRAIN_ADDRESS}-${tokenId}`)) {
-      store.remove("UserToken", useTokenId);
+      store.remove("UserToken", userTokenId);
     }
   }
 
