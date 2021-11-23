@@ -3,6 +3,7 @@ import { Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
+  ZERO_ADDRESS,
   ZERO_BI,
   getOrCreateCollection,
   getOrCreateToken,
@@ -11,7 +12,7 @@ import {
   getListingId,
   getTokenId,
   addMetadataToToken,
-  ZERO_ADDRESS,
+  removeAtIndex,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 
@@ -65,7 +66,7 @@ export function handleTransfer(event: Transfer): void {
     let seller = getListingId(from, address, tokenId);
 
     store.remove("UserToken", seller);
-    store.remove("Listing", seller);
+    // store.remove("Listing", seller);
 
     let listingIdIndex = collection.listingIds.indexOf(seller);
     let tokenIdIndex = collection.tokenIds.indexOf(seller);
@@ -82,9 +83,7 @@ export function handleTransfer(event: Transfer): void {
     }
 
     if (tokenIdIndex != -1) {
-      collection.tokenIds = collection.tokenIds
-        .slice(0, tokenIdIndex)
-        .concat(collection.tokenIds.slice(tokenIdIndex + 1));
+      collection.tokenIds = removeAtIndex(collection.tokenIds, tokenIdIndex);
     }
   }
 
@@ -102,7 +101,7 @@ export function handleTransfer(event: Transfer): void {
     let uri = contract.try_tokenURI(metadataId);
 
     if (!uri.reverted) {
-      let metadataTokenId = getTokenId(address, metadataId)
+      let metadataTokenId = getTokenId(address, metadataId);
 
       token.metadataUri = uri.value;
 
