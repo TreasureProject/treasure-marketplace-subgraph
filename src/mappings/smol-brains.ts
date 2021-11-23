@@ -1,11 +1,11 @@
 import * as ERC721 from "./721";
 import { Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
+  ONE_BI,
+  SMOLBRAIN_ADDRESS,
   getCreator,
   getOrCreateCollection,
   getOrCreateUserToken,
-  ONE_BI,
-  SMOLBRAIN_ADDRESS,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 import {

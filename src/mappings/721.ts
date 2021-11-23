@@ -1,5 +1,5 @@
-import { log, store } from "@graphprotocol/graph-ts";
-import { Metadata } from "../../generated/schema";
+import { store } from "@graphprotocol/graph-ts";
+import { Listing, Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
@@ -52,7 +52,7 @@ export function handleTransfer(event: Transfer): void {
 
   let metadata = Metadata.load(token.id);
 
-  if (metadata) {
+  if (metadata && metadata.description != "Smol Brains Land") {
     token.name = `${metadata.description} ${metadata.name}`;
   } else {
     token.name = `${collection.name} ${`#${tokenId.toString()}`}`;
@@ -65,38 +65,27 @@ export function handleTransfer(event: Transfer): void {
   if (from.toHexString() != ZERO_ADDRESS) {
     let seller = getListingId(from, address, tokenId);
 
-    store.remove("UserToken", seller);
-    // store.remove("Listing", seller);
-
     let listingIdIndex = collection.listingIds.indexOf(seller);
     let tokenIdIndex = collection.tokenIds.indexOf(seller);
 
     if (listingIdIndex != -1) {
-      // let before = collection.listingIds[listingIdIndex];
+      let listing = Listing.load(seller);
 
-      collection.listingIds = removeAtIndex(
-        collection.listingIds,
-        listingIdIndex
-      );
-
-      // let after = collection.listingIds[listingIdIndex - 1];
-
-      log.info("Removed listing: {}, index: {}", [
-        seller,
-        listingIdIndex.toString(),
-        // before,
-        // after,
-      ]);
-
-      collection.save();
+      // Was called using `safeTransferFrom` and not a sold listing
+      if (
+        listing &&
+        event.transaction.input.toHexString().startsWith("0x42842e0e")
+      ) {
+        store.remove("Listing", listing.id);
+      }
 
       updateCollectionFloorAndTotal(address);
-
-      store.remove("Listing", seller);
     }
 
     if (tokenIdIndex != -1) {
       collection.tokenIds = removeAtIndex(collection.tokenIds, tokenIdIndex);
+
+      store.remove("UserToken", seller);
     }
   }
 

@@ -167,14 +167,6 @@ export function updateCollectionFloorAndTotal(id: Address): void {
   for (let index = 0; index < listings.length; index++) {
     let listing = Listing.load(listings[index]);
 
-    if (
-      listing &&
-      listing.id ==
-        "0x032f84aeff59ddebc55797f321624826d873bf65-0x4feea06250d9f315a6a454c9c8a7fcbcf8701210-0x17"
-    ) {
-      log.info("foundListing, status: {}", [listing.status]);
-    }
-
     if (listing !== null && listing.status == "Active") {
       let floorPrice = collection.floorPrice;
       let pricePerItem = listing.pricePerItem;
