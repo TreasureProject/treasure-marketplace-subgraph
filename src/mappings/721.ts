@@ -79,7 +79,7 @@ export function handleTransfer(event: Transfer): void {
         listingIdIndex
       );
 
-      let after = collection.listingIds[listingIdIndex];
+      let after = collection.listingIds[listingIdIndex - 1];
 
       log.info("Removed listing: {}, index: {}, before: {}, after: {}", [
         seller,
