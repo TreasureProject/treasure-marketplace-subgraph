@@ -1,4 +1,4 @@
-import { store } from "@graphprotocol/graph-ts";
+import { log, store } from "@graphprotocol/graph-ts";
 import { Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
@@ -72,12 +72,14 @@ export function handleTransfer(event: Transfer): void {
     let tokenIdIndex = collection.tokenIds.indexOf(seller);
 
     if (listingIdIndex != -1) {
-      // collection.totalListings = collection.totalListings.minus(ONE_BI);
-      // collection.listingIds = collection.listingIds
-      //   .slice(0, listingIdIndex)
-      //   .concat(collection.listingIds.slice(listingIdIndex + 1));
+      log.info("Removing listing: {}", [seller]);
 
-      // collection.save();
+      collection.listingIds = removeAtIndex(
+        collection.listingIds,
+        listingIdIndex
+      );
+
+      collection.save();
 
       updateCollectionFloorAndTotal(address);
     }
@@ -108,9 +110,10 @@ export function handleTransfer(event: Transfer): void {
       addMetadataToToken(uri.value, metadataTokenId, metadataId);
 
       if (Metadata.load(metadataTokenId)) {
-        collection.missingMetadataIds = collection.missingMetadataIds
-          .slice(0, index)
-          .concat(collection.missingMetadataIds.slice(index + 1));
+        collection.missingMetadataIds = removeAtIndex(
+          collection.missingMetadataIds,
+          index
+        );
       }
     }
   }
