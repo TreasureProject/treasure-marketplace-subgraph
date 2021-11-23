@@ -12,6 +12,7 @@ import {
   getTokenId,
   addMetadataToToken,
   ZERO_ADDRESS,
+  updateCollectionFloorAndTotal,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -61,7 +62,30 @@ export function handleTransfer(event: Transfer): void {
 
   // Not a mint, remove it from the transferrer
   if (from.toHexString() != ZERO_ADDRESS) {
-    store.remove("UserToken", getListingId(from, address, tokenId));
+    let seller = getListingId(from, address, tokenId);
+
+    store.remove("UserToken", seller);
+    store.remove("Listing", seller);
+
+    let listingIdIndex = collection.listingIds.indexOf(seller);
+    let tokenIdIndex = collection.tokenIds.indexOf(seller);
+
+    if (listingIdIndex != -1) {
+      collection.totalListings = collection.totalListings.minus(ONE_BI);
+      collection.listingIds = collection.listingIds
+        .slice(0, listingIdIndex)
+        .concat(collection.listingIds.slice(listingIdIndex + 1));
+
+      collection.save();
+
+      updateCollectionFloorAndTotal(address);
+    }
+
+    if (tokenIdIndex != -1) {
+      collection.tokenIds = collection.tokenIds
+        .slice(0, tokenIdIndex)
+        .concat(collection.tokenIds.slice(tokenIdIndex + 1));
+    }
   }
 
   userToken.quantity = ONE_BI;
