@@ -1,3 +1,4 @@
+import { store } from "@graphprotocol/graph-ts";
 import { Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
@@ -10,6 +11,7 @@ import {
   getListingId,
   getTokenId,
   addMetadataToToken,
+  ZERO_ADDRESS,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -56,6 +58,11 @@ export function handleTransfer(event: Transfer): void {
 
   token.metadata = token.id;
   token.tokenId = tokenId;
+
+  // Not a mint, remove it from the transferrer
+  if (from.toHexString() != ZERO_ADDRESS) {
+    store.remove("UserToken", getListingId(from, address, tokenId));
+  }
 
   userToken.quantity = ONE_BI;
   userToken.token = token.id;
