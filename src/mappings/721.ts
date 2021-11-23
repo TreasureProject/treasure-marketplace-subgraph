@@ -94,6 +94,28 @@ export function handleTransfer(event: Transfer): void {
 
   collection.tokenIds = collection.tokenIds.concat([userToken.id]);
 
+  // Try fetching missing metadata
+  let metadataIds = collection.missingMetadataIds;
+
+  for (let index = 0; index < metadataIds.length; index++) {
+    let metadataId = metadataIds[index];
+    let uri = contract.try_tokenURI(metadataId);
+
+    if (!uri.reverted) {
+      let metadataTokenId = getTokenId(address, metadataId)
+
+      token.metadataUri = uri.value;
+
+      addMetadataToToken(uri.value, metadataTokenId, metadataId);
+
+      if (Metadata.load(metadataTokenId)) {
+        collection.missingMetadataIds = collection.missingMetadataIds
+          .slice(0, index)
+          .concat(collection.missingMetadataIds.slice(index + 1));
+      }
+    }
+  }
+
   collection.save();
   token.save();
   userToken.save();
