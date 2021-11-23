@@ -90,9 +90,9 @@ export function handleTransfer(event: Transfer): void {
 
       collection.save();
 
-      store.remove('Listing', seller);
-
       updateCollectionFloorAndTotal(address);
+
+      store.remove("Listing", seller);
     }
 
     if (tokenIdIndex != -1) {
