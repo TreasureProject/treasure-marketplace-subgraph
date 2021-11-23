@@ -72,14 +72,25 @@ export function handleTransfer(event: Transfer): void {
     let tokenIdIndex = collection.tokenIds.indexOf(seller);
 
     if (listingIdIndex != -1) {
-      log.info("Removing listing: {}", [seller]);
+      let before = collection.listingIds[listingIdIndex];
 
       collection.listingIds = removeAtIndex(
         collection.listingIds,
         listingIdIndex
       );
 
+      let after = collection.listingIds[listingIdIndex];
+
+      log.info("Removed listing: {}, index: {}, before: {}, after: {}", [
+        seller,
+        listingIdIndex.toString(),
+        before,
+        after,
+      ]);
+
       collection.save();
+
+      store.remove('Listing', seller);
 
       updateCollectionFloorAndTotal(address);
     }
