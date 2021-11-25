@@ -82,7 +82,7 @@ export function handleTransfer(event: Transfer): void {
     if (listing && isSafeTransferFrom(event.transaction)) {
       store.remove("Listing", listing.id);
 
-      updateCollectionFloorAndTotal(address);
+      updateCollectionFloorAndTotal(collection);
     }
 
     store.remove("UserToken", seller);

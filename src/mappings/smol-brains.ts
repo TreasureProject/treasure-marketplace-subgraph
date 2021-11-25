@@ -46,7 +46,7 @@ export function handleDropSchool(event: DropSchool): void {
     collection.listingIds = collection.listingIds.concat([listing.id]);
     collection.save();
 
-    updateCollectionFloorAndTotal(smolbrains);
+    updateCollectionFloorAndTotal(collection);
   } else {
     let userToken = getOrCreateUserToken(id);
 
@@ -71,7 +71,7 @@ export function handleJoinSchool(event: JoinSchool): void {
     listing.status = "Hidden";
     listing.save();
 
-    updateCollectionFloorAndTotal(smolbrains);
+    updateCollectionFloorAndTotal(getOrCreateCollection(SMOLBRAIN_ADDRESS));
   } else {
     store.remove("UserToken", id);
   }

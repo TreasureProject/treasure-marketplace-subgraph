@@ -77,7 +77,7 @@ export function handleTransferSingle(event: TransferSingle): void {
       listing.status = "Hidden";
       listing.save();
 
-      updateCollectionFloorAndTotal(address);
+      updateCollectionFloorAndTotal(collection);
     }
 
     if (userToken.quantity.equals(quantity)) {
@@ -96,9 +96,8 @@ export function handleTransferSingle(event: TransferSingle): void {
       listing.save();
 
       collection.listingIds = collection.listingIds.concat([listing.id]);
-      collection.save();
 
-      updateCollectionFloorAndTotal(address);
+      updateCollectionFloorAndTotal(collection);
     } else {
       let toUser = getOrCreateUser(to.toHexString());
 
@@ -118,7 +117,7 @@ export function handleTransferSingle(event: TransferSingle): void {
       if (listing && isSafeTransferFrom(event.transaction)) {
         store.remove("Listing", listing.id);
 
-        updateCollectionFloorAndTotal(address);
+        updateCollectionFloorAndTotal(collection);
       }
 
       if (userToken.quantity.equals(quantity)) {
