@@ -5,13 +5,14 @@ import {
   ONE_BI,
   ZERO_ADDRESS,
   ZERO_BI,
+  addMetadataToToken,
   getOrCreateCollection,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
   getListingId,
   getTokenId,
-  addMetadataToToken,
+  isSafeTransferFrom,
   removeAtIndex,
   updateCollectionFloorAndTotal,
 } from "../helpers";
@@ -58,42 +59,38 @@ export function handleTransfer(event: Transfer): void {
     token.name = `${collection.name} ${`#${tokenId.toString()}`}`;
   }
 
+  // Add missing metadata id to be tried again
+  if (!metadata) {
+    collection.missingMetadataIds = collection.missingMetadataIds.concat([
+      tokenId,
+    ]);
+  }
+
   token.metadata = token.id;
   token.tokenId = tokenId;
 
   // Not a mint, remove it from the transferrer
   if (from.toHexString() != ZERO_ADDRESS) {
     let seller = getListingId(from, address, tokenId);
+    let listing = Listing.load(seller);
 
-    let listingIdIndex = collection.listingIds.indexOf(seller);
-    let tokenIdIndex = collection.tokenIds.indexOf(seller);
+    /*
+     * For Smolbrains, we cannot transfer while staked, so we can skip handling that case.
+     */
 
-    if (listingIdIndex != -1) {
-      let listing = Listing.load(seller);
-
-      // Was called using `safeTransferFrom` and not a sold listing
-      if (
-        listing &&
-        event.transaction.input.toHexString().startsWith("0x42842e0e")
-      ) {
-        store.remove("Listing", listing.id);
-      }
+    // Was called using `safeTransferFrom` and not a sold listing
+    if (listing && isSafeTransferFrom(event.transaction)) {
+      store.remove("Listing", listing.id);
 
       updateCollectionFloorAndTotal(address);
     }
 
-    if (tokenIdIndex != -1) {
-      collection.tokenIds = removeAtIndex(collection.tokenIds, tokenIdIndex);
-
-      store.remove("UserToken", seller);
-    }
+    store.remove("UserToken", seller);
   }
 
   userToken.quantity = ONE_BI;
   userToken.token = token.id;
   userToken.user = buyer.id;
-
-  collection.tokenIds = collection.tokenIds.concat([userToken.id]);
 
   // Try fetching missing metadata
   let metadataIds = collection.missingMetadataIds;

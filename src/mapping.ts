@@ -87,11 +87,11 @@ export function handleItemListed(event: ItemListed): void {
   let collection = getOrCreateCollection(token.collection);
 
   let floorPrice = collection.floorPrice;
-  let status = Student.load(token.id) ? "Hidden" : "Active";
+  let status = Student.load(listing.id) ? "Hidden" : "Active";
 
   if (
     (floorPrice.isZero() || floorPrice.gt(pricePerItem)) &&
-    status === "Active"
+    status == "Active"
   ) {
     collection.floorPrice = pricePerItem;
   }
@@ -108,9 +108,8 @@ export function handleItemListed(event: ItemListed): void {
     }
   }
 
-  collection.listingIds = collection.listingIds.concat([listing.id]);
-
-  if (status === "Active") {
+  if (status == "Active") {
+    collection.listingIds = collection.listingIds.concat([listing.id]);
     collection.totalListings = collection.totalListings.plus(ONE_BI);
   }
 

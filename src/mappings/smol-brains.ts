@@ -4,7 +4,9 @@ import {
   ONE_BI,
   SMOLBRAIN_ADDRESS,
   getCreator,
+  getListingId,
   getOrCreateCollection,
+  getOrCreateUser,
   getOrCreateUserToken,
   updateCollectionFloorAndTotal,
 } from "../helpers";
@@ -26,75 +28,51 @@ export function handleTransfer(event: Transfer): void {
 }
 
 export function handleDropSchool(event: DropSchool): void {
-  let collection = getOrCreateCollection(SMOLBRAIN_ADDRESS);
-  let userTokenIds = collection.tokenIds;
-  let listingIds = collection.listingIds;
-  let tokenId = event.params.tokenId.toHexString();
+  let from = event.transaction.from;
+  let user = getOrCreateUser(from.toHexString());
+  let smolbrains = Address.fromString(SMOLBRAIN_ADDRESS);
+  let tokenId = event.params.tokenId;
+  let id = getListingId(from, smolbrains, tokenId);
+  let listing = Listing.load(id);
 
-  store.remove("Student", `${SMOLBRAIN_ADDRESS}-${tokenId}`);
+  store.remove("Student", id);
 
-  for (let index = 0; index < userTokenIds.length; index++) {
-    let userTokenId = userTokenIds[index];
-    let token = `${SMOLBRAIN_ADDRESS}-${tokenId}`;
+  if (listing) {
+    listing.status = "Active";
+    listing.save();
 
-    if (userTokenId.endsWith(token) && !Listing.load(userTokenId)) {
-      let userToken = getOrCreateUserToken(userTokenId);
-      let user = userTokenId.split("-")[0];
+    let collection = getOrCreateCollection(SMOLBRAIN_ADDRESS);
 
-      userToken.quantity = ONE_BI;
-      userToken.token = token;
-      userToken.user = user;
+    collection.listingIds = collection.listingIds.concat([listing.id]);
+    collection.save();
 
-      userToken.save();
-    }
-  }
+    updateCollectionFloorAndTotal(smolbrains);
+  } else {
+    let userToken = getOrCreateUserToken(id);
 
-  for (let index = 0; index < listingIds.length; index++) {
-    let listingId = listingIds[index];
+    userToken.quantity = ONE_BI;
+    userToken.token = `${SMOLBRAIN_ADDRESS}-${tokenId.toHexString()}`;
+    userToken.user = user.id;
 
-    if (listingId.endsWith(`${SMOLBRAIN_ADDRESS}-${tokenId}`)) {
-      let listing = Listing.load(listingId);
-
-      if (listing) {
-        listing.status = "Active";
-        listing.save();
-
-        updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS));
-      }
-    }
+    userToken.save();
   }
 }
 
 export function handleJoinSchool(event: JoinSchool): void {
-  let collection = getOrCreateCollection(SMOLBRAIN_ADDRESS);
-  let userTokenIds = collection.tokenIds;
-  let listingIds = collection.listingIds;
-  let tokenId = event.params.tokenId.toHexString();
+  let from = event.transaction.from;
+  let smolbrains = Address.fromString(SMOLBRAIN_ADDRESS);
+  let tokenId = event.params.tokenId;
+  let id = getListingId(from, smolbrains, tokenId);
+  let listing = Listing.load(id);
 
-  let student = new Student(`${SMOLBRAIN_ADDRESS}-${tokenId}`);
+  new Student(id).save();
 
-  student.save();
+  if (listing) {
+    listing.status = "Hidden";
+    listing.save();
 
-  for (let index = 0; index < userTokenIds.length; index++) {
-    const userTokenId = userTokenIds[index];
-
-    if (tokenId.endsWith(`${SMOLBRAIN_ADDRESS}-${tokenId}`)) {
-      store.remove("UserToken", userTokenId);
-    }
-  }
-
-  for (let index = 0; index < listingIds.length; index++) {
-    const listingId = listingIds[index];
-
-    if (listingId.endsWith(`${SMOLBRAIN_ADDRESS}-${tokenId}`)) {
-      let listing = Listing.load(listingId);
-
-      if (listing) {
-        listing.status = "Hidden";
-        listing.save();
-
-        updateCollectionFloorAndTotal(Address.fromString(SMOLBRAIN_ADDRESS));
-      }
-    }
+    updateCollectionFloorAndTotal(smolbrains);
+  } else {
+    store.remove("UserToken", id);
   }
 }
