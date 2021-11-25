@@ -87,7 +87,7 @@ export function handleTransferSingle(event: TransferSingle): void {
       userToken.save();
     }
   } else if (STAKING_ADDRESS == from.toHexString()) {
-    let id = getListingId(from, address, tokenId);
+    let id = getListingId(to, address, tokenId);
     let listing = Listing.load(id);
     let userToken = getOrCreateUserToken(id);
 
