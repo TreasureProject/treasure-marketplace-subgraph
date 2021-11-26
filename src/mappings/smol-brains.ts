@@ -56,6 +56,8 @@ export function handleDropSchool(event: DropSchool): void {
 
     userToken.save();
   }
+
+  ERC721.updateMetadata(smolbrains, tokenId);
 }
 
 export function handleJoinSchool(event: JoinSchool): void {

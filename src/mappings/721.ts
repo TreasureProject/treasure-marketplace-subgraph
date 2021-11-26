@@ -1,4 +1,4 @@
-import { store } from "@graphprotocol/graph-ts";
+import { Address, BigInt, store } from "@graphprotocol/graph-ts";
 import { Listing, Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
@@ -119,4 +119,17 @@ export function handleTransfer(event: Transfer): void {
   token.save();
   userToken.save();
   buyer.save();
+}
+
+export function updateMetadata(address: Address, tokenId: BigInt): void {
+  let contract = ERC721.bind(address);
+  let uri = contract.try_tokenURI(tokenId);
+  let token = getOrCreateToken(getTokenId(address, tokenId));
+
+  if (!uri.reverted && token.metadataUri != uri.value) {
+    token.metadataUri = uri.value;
+    token.save();
+
+    addMetadataToToken(uri.value, token.id, tokenId);
+  }
 }
