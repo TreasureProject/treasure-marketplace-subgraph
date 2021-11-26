@@ -238,7 +238,7 @@ dataSources:
     network: rinkeby
     source:
       address: "0xA77bBE59169b159619074AD289344271f66CC69F"
-      abi: ERC721
+      abi: School
       startBlock: 9673279
     mapping:
       kind: ethereum/events
@@ -247,8 +247,10 @@ dataSources:
       entities:
         - Transfer
       abis:
-        - name: ERC721
+        - name: School
           file: ./abis/SmolBrainsSchool.json
+        - name: ERC721
+          file: ./abis/721.json
       eventHandlers:
         - event: DropSchool(uint256)
           handler: handleDropSchool

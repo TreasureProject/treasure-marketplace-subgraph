@@ -1,4 +1,4 @@
-import { Address, BigInt, store } from "@graphprotocol/graph-ts";
+import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
 import { Listing, Metadata } from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
