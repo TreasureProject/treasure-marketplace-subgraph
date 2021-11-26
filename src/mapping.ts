@@ -71,7 +71,7 @@ export function handleItemCanceled(event: ItemCanceled): void {
 
   userToken.save();
 
-  updateCollectionFloorAndTotal(params.nftAddress);
+  updateCollectionFloorAndTotal(getOrCreateCollection(listing.collection));
 }
 
 export function handleItemListed(event: ItemListed): void {
@@ -87,11 +87,11 @@ export function handleItemListed(event: ItemListed): void {
   let collection = getOrCreateCollection(token.collection);
 
   let floorPrice = collection.floorPrice;
-  let status = Student.load(token.id) ? "Hidden" : "Active";
+  let status = Student.load(listing.id) ? "Hidden" : "Active";
 
   if (
     (floorPrice.isZero() || floorPrice.gt(pricePerItem)) &&
-    status === "Active"
+    status == "Active"
   ) {
     collection.floorPrice = pricePerItem;
   }
@@ -108,9 +108,8 @@ export function handleItemListed(event: ItemListed): void {
     }
   }
 
-  collection.listingIds = collection.listingIds.concat([listing.id]);
-
-  if (status === "Active") {
+  if (status == "Active") {
+    collection.listingIds = collection.listingIds.concat([listing.id]);
     collection.totalListings = collection.totalListings.plus(ONE_BI);
   }
 
@@ -190,7 +189,7 @@ export function handleItemSold(event: ItemSold): void {
 
   sold.save();
 
-  updateCollectionFloorAndTotal(params.nftAddress);
+  updateCollectionFloorAndTotal(collection);
 }
 
 export function handleItemUpdated(event: ItemUpdated): void {
@@ -236,7 +235,7 @@ export function handleItemUpdated(event: ItemUpdated): void {
 
   listing.save();
 
-  updateCollectionFloorAndTotal(params.nftAddress);
+  updateCollectionFloorAndTotal(getOrCreateCollection(listing.collection));
 }
 
 export function handleItemSoldStaging(event: ItemSold): void {

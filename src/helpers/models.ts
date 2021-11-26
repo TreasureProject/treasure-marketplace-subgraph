@@ -29,7 +29,6 @@ export function getOrCreateCollection(id: string): Collection {
     collection.floorPrice = ZERO_BI;
     collection.listingIds = [];
     collection.missingMetadataIds = [];
-    collection.tokenIds = [];
     collection.totalListings = ZERO_BI;
     collection.totalSales = ZERO_BI;
     collection.save();
@@ -148,17 +147,7 @@ export function addMetadataToToken(
   }
 }
 
-export function updateCollectionFloorAndTotal(id: Address): void {
-  let collection = Collection.load(id.toHexString());
-
-  if (collection == null) {
-    log.info("[updateCollectionFloorAndTotal]: Found Null Collection {}", [
-      id.toHexString(),
-    ]);
-
-    return;
-  }
-
+export function updateCollectionFloorAndTotal(collection: Collection): void {
   let floorPrices = new TypedMap<string, BigInt>();
   let listings = collection.listingIds;
 
@@ -167,7 +156,7 @@ export function updateCollectionFloorAndTotal(id: Address): void {
   for (let index = 0; index < listings.length; index++) {
     let listing = Listing.load(listings[index]);
 
-    if (listing !== null && listing.status == "Active") {
+    if (listing != null && listing.status == "Active") {
       let floorPrice = collection.floorPrice;
       let pricePerItem = listing.pricePerItem;
 

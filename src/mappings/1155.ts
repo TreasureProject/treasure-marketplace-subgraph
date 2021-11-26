@@ -1,4 +1,5 @@
 import { log, store } from "@graphprotocol/graph-ts";
+import { Listing } from "../../generated/schema";
 import {
   ERC1155,
   TransferBatch,
@@ -7,6 +8,8 @@ import {
 } from "../../generated/TreasureMarketplace/ERC1155";
 import {
   STAKING_ADDRESS,
+  ZERO_ADDRESS,
+  addMetadataToToken,
   getCreator,
   getName,
   getOrCreateCollection,
@@ -15,7 +18,8 @@ import {
   getOrCreateUserToken,
   getListingId,
   getTokenId,
-  addMetadataToToken,
+  isSafeTransferFrom,
+  updateCollectionFloorAndTotal,
 } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {
@@ -65,7 +69,16 @@ export function handleTransferSingle(event: TransferSingle): void {
   }
 
   if (STAKING_ADDRESS == to.toHexString()) {
-    let userToken = getOrCreateUserToken(getListingId(from, address, tokenId));
+    let id = getListingId(from, address, tokenId);
+    let listing = Listing.load(id);
+    let userToken = getOrCreateUserToken(id);
+
+    if (listing) {
+      listing.status = "Hidden";
+      listing.save();
+
+      updateCollectionFloorAndTotal(collection);
+    }
 
     if (userToken.quantity.equals(quantity)) {
       store.remove("UserToken", userToken.id);
@@ -73,7 +86,48 @@ export function handleTransferSingle(event: TransferSingle): void {
       userToken.quantity = userToken.quantity.minus(quantity);
       userToken.save();
     }
+  } else if (STAKING_ADDRESS == from.toHexString()) {
+    let id = getListingId(to, address, tokenId);
+    let listing = Listing.load(id);
+    let userToken = getOrCreateUserToken(id);
+
+    if (listing) {
+      listing.status = "Active";
+      listing.save();
+
+      collection.listingIds = collection.listingIds.concat([listing.id]);
+
+      updateCollectionFloorAndTotal(collection);
+    } else {
+      let toUser = getOrCreateUser(to.toHexString());
+
+      userToken.token = token.id;
+      userToken.user = toUser.id;
+      userToken.quantity = userToken.quantity.plus(quantity);
+      userToken.save();
+    }
   } else {
+    // Not a mint, remove it from the transferrer
+    if (from.toHexString() != ZERO_ADDRESS) {
+      let seller = getListingId(from, address, tokenId);
+      let listing = Listing.load(seller);
+      let userToken = getOrCreateUserToken(seller);
+
+      // Was called using `safeTransferFrom` and not a sold listing
+      if (listing && isSafeTransferFrom(event.transaction)) {
+        store.remove("Listing", listing.id);
+
+        updateCollectionFloorAndTotal(collection);
+      }
+
+      if (userToken.quantity.equals(quantity)) {
+        store.remove("UserToken", userToken.id);
+      } else {
+        userToken.quantity = userToken.quantity.minus(quantity);
+        userToken.save();
+      }
+    }
+
     let toUser = getOrCreateUser(to.toHexString());
     let userToken = getOrCreateUserToken(getListingId(to, address, tokenId));
 
