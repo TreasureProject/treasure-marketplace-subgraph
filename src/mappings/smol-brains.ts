@@ -13,7 +13,7 @@ import {
 import {
   DropSchool,
   JoinSchool,
-} from "../../generated/Smol Brains School/ERC721";
+} from "../../generated/Smol Brains School/School";
 import { Address, store } from "@graphprotocol/graph-ts";
 import { Listing, Student } from "../../generated/schema";
 
