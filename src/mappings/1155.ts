@@ -8,7 +8,7 @@ import {
 } from "../../generated/TreasureMarketplace/ERC1155";
 import {
   STAKING_ADDRESS,
-  ZERO_ADDRESS,
+  ZERO_BI,
   addMetadataToToken,
   getCreator,
   getName,
@@ -107,24 +107,29 @@ export function handleTransferSingle(event: TransferSingle): void {
       userToken.save();
     }
   } else {
-    // Not a mint, remove it from the transferrer
-    if (from.toHexString() != ZERO_ADDRESS) {
+    // Transfered away, update counts
+    if (isSafeTransferFrom(event.transaction)) {
       let seller = getListingId(from, address, tokenId);
       let listing = Listing.load(seller);
       let userToken = getOrCreateUserToken(seller);
+      let updated = userToken.quantity.minus(quantity);
 
-      // Was called using `safeTransferFrom` and not a sold listing
-      if (listing && isSafeTransferFrom(event.transaction)) {
-        store.remove("Listing", listing.id);
-
-        updateCollectionFloorAndTotal(collection);
-      }
-
-      if (userToken.quantity.equals(quantity)) {
+      if (userToken.quantity.equals(quantity) || updated.lt(ZERO_BI)) {
         store.remove("UserToken", userToken.id);
       } else {
         userToken.quantity = userToken.quantity.minus(quantity);
         userToken.save();
+      }
+
+      if (listing && updated.lt(ZERO_BI)) {
+        if (listing.quantity.equals(updated.abs())) {
+          store.remove("Listing", listing.id);
+        } else {
+          listing.quantity = listing.quantity.minus(updated.abs());
+          listing.save();
+        }
+
+        updateCollectionFloorAndTotal(collection);
       }
     }
 
