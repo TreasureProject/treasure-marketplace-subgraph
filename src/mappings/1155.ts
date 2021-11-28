@@ -20,6 +20,7 @@ import {
   getTokenId,
   isSafeTransferFrom,
   updateCollectionFloorAndTotal,
+  ZERO_BI,
 } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {
@@ -107,24 +108,32 @@ export function handleTransferSingle(event: TransferSingle): void {
       userToken.save();
     }
   } else {
-    // Not a mint, remove it from the transferrer
-    if (from.toHexString() != ZERO_ADDRESS && isSafeTransferFrom(event.transaction)) {
+    // Transfered away, update counts
+    if (isSafeTransferFrom(event.transaction)) {
       let seller = getListingId(from, address, tokenId);
       let listing = Listing.load(seller);
       let userToken = getOrCreateUserToken(seller);
+      let updated = quantity.minus(userToken.quantity);
 
-      // Was called using `safeTransferFrom` and not a sold listing
-      if (listing) {
-        store.remove("Listing", listing.id);
-
-        updateCollectionFloorAndTotal(collection);
-      }
-
-      if (userToken.quantity.equals(quantity)) {
+      if (
+        userToken.quantity.equals(quantity) ||
+        userToken.quantity.lt(quantity)
+      ) {
         store.remove("UserToken", userToken.id);
       } else {
         userToken.quantity = userToken.quantity.minus(quantity);
         userToken.save();
+      }
+
+      if (listing) {
+        if (listing.quantity.equals(updated)) {
+          store.remove("Listing", listing.id);
+        } else {
+          listing.quantity = listing.quantity.minus(updated);
+          listing.save();
+        }
+
+        updateCollectionFloorAndTotal(collection);
       }
     }
 
