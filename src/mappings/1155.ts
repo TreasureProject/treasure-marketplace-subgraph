@@ -8,7 +8,7 @@ import {
 } from "../../generated/TreasureMarketplace/ERC1155";
 import {
   STAKING_ADDRESS,
-  ZERO_ADDRESS,
+  ZERO_BI,
   addMetadataToToken,
   getCreator,
   getName,
@@ -20,7 +20,6 @@ import {
   getTokenId,
   isSafeTransferFrom,
   updateCollectionFloorAndTotal,
-  ZERO_BI,
 } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {
@@ -113,12 +112,9 @@ export function handleTransferSingle(event: TransferSingle): void {
       let seller = getListingId(from, address, tokenId);
       let listing = Listing.load(seller);
       let userToken = getOrCreateUserToken(seller);
-      let updated = quantity.minus(userToken.quantity);
+      let updated = userToken.quantity.minus(quantity);
 
-      if (
-        userToken.quantity.equals(quantity) ||
-        userToken.quantity.lt(quantity)
-      ) {
+      if (userToken.quantity.equals(quantity) || updated.lt(ZERO_BI)) {
         store.remove("UserToken", userToken.id);
       } else {
         userToken.quantity = userToken.quantity.minus(quantity);
