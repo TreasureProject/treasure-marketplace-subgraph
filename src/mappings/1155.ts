@@ -125,11 +125,11 @@ export function handleTransferSingle(event: TransferSingle): void {
         userToken.save();
       }
 
-      if (listing) {
-        if (listing.quantity.equals(updated)) {
+      if (listing && updated.lt(ZERO_BI)) {
+        if (listing.quantity.equals(updated.abs())) {
           store.remove("Listing", listing.id);
         } else {
-          listing.quantity = listing.quantity.minus(updated);
+          listing.quantity = listing.quantity.minus(updated.abs());
           listing.save();
         }
 
