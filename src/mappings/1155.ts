@@ -108,13 +108,13 @@ export function handleTransferSingle(event: TransferSingle): void {
     }
   } else {
     // Not a mint, remove it from the transferrer
-    if (from.toHexString() != ZERO_ADDRESS) {
+    if (from.toHexString() != ZERO_ADDRESS && isSafeTransferFrom(event.transaction)) {
       let seller = getListingId(from, address, tokenId);
       let listing = Listing.load(seller);
       let userToken = getOrCreateUserToken(seller);
 
       // Was called using `safeTransferFrom` and not a sold listing
-      if (listing && isSafeTransferFrom(event.transaction)) {
+      if (listing) {
         store.remove("Listing", listing.id);
 
         updateCollectionFloorAndTotal(collection);
