@@ -9,9 +9,19 @@ enum TokenStandard {
   ERC1155
 }
 
+type Attribute @entity {
+  id: ID!
+  collection: Collection!
+  metadata: Metadata!
+  name: String!
+  percentage: BigDecimal!
+  value: String!
+}
+
 type Collection @entity {
   id: ID!
   address: Bytes!
+  attributes: [Attribute!] @derivedFrom(field: "collection")
   creator: Creator!
   floorPrice: BigInt!
   listingIds: [String!]!
@@ -53,6 +63,7 @@ type Listing @entity {
 
 type Metadata @entity {
   id: ID!
+  attributes: [Attribute!] @derivedFrom(field: "metadata")
   description: String!
   image: String!
   name: String!

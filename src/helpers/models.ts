@@ -10,6 +10,7 @@ import {
   TypedMap,
 } from "@graphprotocol/graph-ts";
 import {
+  Attribute,
   Collection,
   Creator,
   Listing,
@@ -18,7 +19,17 @@ import {
   User,
   UserToken,
 } from "../../generated/schema";
-import { IPFS_GATEWAY, ZERO_BI, removeAtIndex } from ".";
+import { IPFS_GATEWAY, ZERO_BI, removeAtIndex, getAttributeId } from ".";
+
+export function getOrCreateAttribute(id: string): Attribute {
+  let attribute = Attribute.load(id);
+
+  if (!attribute) {
+    attribute = new Attribute(id);
+  }
+
+  return attribute;
+}
 
 export function getOrCreateCollection(id: string): Collection {
   let collection = Collection.load(id);
@@ -140,6 +151,36 @@ export function addMetadataToToken(
           "ipfs://"
         );
         metadata.name = name;
+
+        // Attributes
+        let attributes = object.get("attributes");
+
+        if (attributes && attributes.kind === JSONValueKind.ARRAY) {
+          let items = attributes.toArray();
+
+          for (let index = 0; index < items.length; index++) {
+            let item = items[index];
+
+            if (item.kind === JSONValueKind.OBJECT) {
+              let object = item.toObject();
+              let type = getString(object.get("trait_type"));
+              let value = getString(object.get("value"));
+              let collection = id.split("-")[0];
+
+              let attribute = getOrCreateAttribute(
+                getAttributeId(Address.fromString(collection), type, value)
+              );
+
+              attribute.name = type;
+              attribute.value = value;
+              attribute.collection = collection;
+              attribute.metadata = metadata.id;
+              attribute.percentage = BigDecimal.fromString("0");
+
+              attribute.save();
+            }
+          }
+        }
 
         metadata.save();
       }
