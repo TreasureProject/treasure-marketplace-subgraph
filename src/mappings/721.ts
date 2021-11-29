@@ -35,6 +35,12 @@ export function handleTransfer(event: Transfer): void {
   collection.address = address;
   collection.standard = "ERC721";
 
+  // Mint, increment token count
+  if (from.toHexString() == ZERO_ADDRESS) {
+    collection.totalTokens = collection.totalTokens.plus(ONE_BI);
+    collection.save();
+  }
+
   token.collection = collection.id;
 
   if (!uri.reverted) {

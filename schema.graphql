@@ -12,6 +12,8 @@ enum TokenStandard {
 type Attribute @entity {
   id: ID!
   collection: Collection!
+  count: BigInt!
+  token: Token!
   metadata: Metadata!
   name: String!
   percentage: BigDecimal!
@@ -33,6 +35,7 @@ type Collection @entity {
   tokens: [Token!]! @derivedFrom(field: "collection")
   totalListings: BigInt!
   totalSales: BigInt!
+  totalTokens: BigInt!
   totalVolume: BigInt!
 }
 

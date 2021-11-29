@@ -19,7 +19,7 @@ import {
   User,
   UserToken,
 } from "../../generated/schema";
-import { IPFS_GATEWAY, ZERO_BI, removeAtIndex, getAttributeId } from ".";
+import { IPFS_GATEWAY, ZERO_BI, removeAtIndex, getAttributeId, ONE_BI } from ".";
 
 export function getOrCreateAttribute(id: string): Attribute {
   let attribute = Attribute.load(id);
@@ -162,20 +162,34 @@ export function addMetadataToToken(
             let item = items[index];
 
             if (item.kind === JSONValueKind.OBJECT) {
+              let collectionId = id.split("-")[0];
+              let collection = Collection.load(collectionId)
               let object = item.toObject();
               let type = getString(object.get("trait_type"));
-              let value = getString(object.get("value"));
-              let collection = id.split("-")[0];
+              let jsonValue = object.get("value");
+
+              let value =
+                jsonValue && jsonValue.kind === JSONValueKind.NUMBER
+                  ? jsonValue.toI64().toString()
+                  : getString(jsonValue);
 
               let attribute = getOrCreateAttribute(
-                getAttributeId(Address.fromString(collection), type, value)
+                getAttributeId(Address.fromString(collectionId), type, value)
               );
 
               attribute.name = type;
               attribute.value = value;
-              attribute.collection = collection;
-              attribute.metadata = metadata.id;
+
+              attribute.count = attribute.count.plus(ONE_BI);
               attribute.percentage = BigDecimal.fromString("0");
+
+              if (collection) {
+                attribute.percentage = attribute.count.div(collection.totalTokens).toBigDecimal()
+                attribute.collection = collection.id;
+              }
+
+              attribute.metadata = metadata.id;
+              attribute.token = tokenId.toHexString()
 
               attribute.save();
             }
