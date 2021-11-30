@@ -36,8 +36,12 @@ export function handleTransfer(event: Transfer): void {
   collection.standard = "ERC721";
 
   // Mint, increment token count
-  if (from.toHexString() == ZERO_ADDRESS) {
-    collection.totalTokens = collection.totalTokens.plus(ONE_BI);
+  if (
+    from.toHexString() == ZERO_ADDRESS &&
+    !collection._tokenIds.includes(tokenId)
+  ) {
+    collection._tokenIds = collection._tokenIds.concat([tokenId]);
+    // collection.totalTokens = collection.totalTokens.plus(ONE_BI);
     collection.save();
   }
 
@@ -46,13 +50,13 @@ export function handleTransfer(event: Transfer): void {
   if (!uri.reverted) {
     token.metadataUri = uri.value;
 
-    addMetadataToToken(uri.value, token.id, tokenId);
+    addMetadataToToken(uri.value, token, tokenId);
   } else if (collection.name == "Smol Brains" && tokenId.equals(ZERO_BI)) {
     // This token was transferred on contract creation so there is no metadataUri yet
     let metadataUri =
       "https://treasure-marketplace.mypinata.cloud/ipfs/QmZg7bqH36fnKUcmKDhqGm65j5hbFeDZcogoxxiFMLeybE/0/0";
 
-    addMetadataToToken(metadataUri, token.id, tokenId);
+    addMetadataToToken(metadataUri, token, tokenId);
 
     token.metadataUri = metadataUri;
   }
@@ -107,10 +111,11 @@ export function handleTransfer(event: Transfer): void {
 
     if (!uri.reverted) {
       let metadataTokenId = getTokenId(address, metadataId);
+      let metadataToken = getOrCreateToken(metadataTokenId);
 
-      token.metadataUri = uri.value;
+      metadataToken.metadataUri = uri.value;
 
-      addMetadataToToken(uri.value, metadataTokenId, metadataId);
+      addMetadataToToken(uri.value, metadataToken, metadataId);
 
       if (Metadata.load(metadataTokenId)) {
         collection.missingMetadataIds = removeAtIndex(
@@ -118,6 +123,8 @@ export function handleTransfer(event: Transfer): void {
           index
         );
       }
+
+      metadataToken.save();
     }
   }
 
@@ -136,6 +143,6 @@ export function updateMetadata(address: Address, tokenId: BigInt): void {
     token.metadataUri = uri.value;
     token.save();
 
-    addMetadataToToken(uri.value, token.id, tokenId);
+    addMetadataToToken(uri.value, token, tokenId);
   }
 }

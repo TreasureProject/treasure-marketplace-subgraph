@@ -15,17 +15,29 @@ import {
   Creator,
   Listing,
   Metadata,
+  MetadataAttribute,
   Token,
+  TokenAttribute,
   User,
   UserToken,
 } from "../../generated/schema";
-import { IPFS_GATEWAY, ZERO_BI, removeAtIndex, getAttributeId, ONE_BI } from ".";
+import {
+  IPFS_GATEWAY,
+  ZERO_BI,
+  removeAtIndex,
+  getAttributeId,
+  ONE_BI,
+  toBigDecimal,
+  getTokenId,
+} from ".";
 
 export function getOrCreateAttribute(id: string): Attribute {
   let attribute = Attribute.load(id);
 
   if (!attribute) {
     attribute = new Attribute(id);
+
+    attribute._tokenIds = [];
   }
 
   return attribute;
@@ -37,6 +49,7 @@ export function getOrCreateCollection(id: string): Collection {
   if (!collection) {
     collection = new Collection(id);
 
+    collection._tokenIds = [];
     collection.floorPrice = ZERO_BI;
     collection.listingIds = [];
     collection.missingMetadataIds = [];
@@ -87,6 +100,8 @@ export function getOrCreateToken(id: string): Token {
 
   if (!token) {
     token = new Token(id);
+
+    token._attributes = [];
   }
 
   return token;
@@ -116,7 +131,7 @@ export function getOrCreateUserToken(id: string): UserToken {
 
 export function addMetadataToToken(
   metadataUri: string,
-  id: string,
+  token: Token,
   tokenId: BigInt
 ): void {
   if (metadataUri.startsWith("https://")) {
@@ -125,6 +140,8 @@ export function addMetadataToToken(
     if (bytes === null) {
       log.info("[IPFS] Null bytes for token {}", [tokenId.toString()]);
     } else {
+      let collection = Collection.load(token.collection);
+      let collectionAddress = Address.fromString(token.collection);
       let obj = json.fromBytes(bytes);
 
       if (obj !== null) {
@@ -143,7 +160,7 @@ export function addMetadataToToken(
         let image = getString(object.get("image"));
         let name = getString(object.get("name"));
 
-        let metadata = getOrCreateMetadata(id);
+        let metadata = getOrCreateMetadata(token.id);
 
         metadata.description = description;
         metadata.image = image.replace(
@@ -151,6 +168,7 @@ export function addMetadataToToken(
           "ipfs://"
         );
         metadata.name = name;
+        metadata.token = token.id;
 
         // Attributes
         let attributes = object.get("attributes");
@@ -162,8 +180,7 @@ export function addMetadataToToken(
             let item = items[index];
 
             if (item.kind === JSONValueKind.OBJECT) {
-              let collectionId = id.split("-")[0];
-              let collection = Collection.load(collectionId)
+              // let collectionId = id.split("-")[0];
               let object = item.toObject();
               let type = getString(object.get("trait_type"));
               let jsonValue = object.get("value");
@@ -174,29 +191,98 @@ export function addMetadataToToken(
                   : getString(jsonValue);
 
               let attribute = getOrCreateAttribute(
-                getAttributeId(Address.fromString(collectionId), type, value)
+                getAttributeId(collectionAddress, type, value)
               );
 
               attribute.name = type;
               attribute.value = value;
 
-              attribute.count = attribute.count.plus(ONE_BI);
-              attribute.percentage = BigDecimal.fromString("0");
+              if (!attribute._tokenIds.includes(tokenId)) {
+                attribute._tokenIds = attribute._tokenIds.concat([tokenId]);
+                // attribute.count = attribute.count.plus(ONE_BI);
+                attribute.percentage = BigDecimal.fromString("0");
+              }
 
               if (collection) {
-                attribute.percentage = attribute.count.div(collection.totalTokens).toBigDecimal()
+                let count = attribute._tokenIds.length;
+                let total = collection._tokenIds.length;
+
+                attribute.percentage = toBigDecimal(count).div(
+                  toBigDecimal(total)
+                );
+
                 attribute.collection = collection.id;
               }
 
-              attribute.metadata = metadata.id;
-              attribute.token = tokenId.toHexString()
+              let relationshipId = [metadata.id, attribute.id].join("-");
+
+              if (!MetadataAttribute.load(relationshipId)) {
+                let relationship = new MetadataAttribute(relationshipId);
+
+                relationship.attribute = attribute.id;
+                relationship.metadata = metadata.id;
+                relationship.save();
+              }
+
+              if (!TokenAttribute.load(relationshipId)) {
+                let relationship = new TokenAttribute(relationshipId);
+
+                relationship.attribute = attribute.id;
+                relationship.token = token.id;
+                relationship.save();
+              }
 
               attribute.save();
+
+              let lookup = `${type},${value}`;
+
+              if (!token._attributes.includes(lookup)) {
+                token._attributes = token._attributes.concat([lookup]);
+                token.save();
+              }
             }
           }
         }
 
         metadata.save();
+
+        if (collection) {
+          let ids = collection._tokenIds;
+
+          for (let index = 0; index < ids.length; index++) {
+            let id = ids[index];
+
+            if (!id.equals(tokenId)) {
+              let _token = getOrCreateToken(getTokenId(collectionAddress, id));
+
+              if (_token) {
+                let lookups = _token._attributes;
+
+                for (let _index = 0; _index < lookups.length; _index++) {
+                  let lookup = lookups[_index];
+                  let split = lookup.split(",");
+                  let name = split[0];
+                  let value = split[1];
+                  let attribute = getOrCreateAttribute(
+                    getAttributeId(collectionAddress, name, value)
+                  );
+
+                  let count = attribute._tokenIds.length;
+                  let total = collection._tokenIds.length;
+
+                  attribute.percentage = toBigDecimal(count).div(
+                    toBigDecimal(total)
+                  );
+
+                  attribute.save();
+                }
+              }
+            }
+          }
+        }
+
+        token.rarity = toBigDecimal(0);
+        token.save();
       }
     }
   }

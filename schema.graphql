@@ -11,10 +11,13 @@ enum TokenStandard {
 
 type Attribute @entity {
   id: ID!
+
+  "Internal for tracking tokenIds calculated"
+  _tokenIds: [BigInt!]!
+
   collection: Collection!
-  count: BigInt!
-  token: Token!
-  metadata: Metadata!
+  tokens: [TokenAttribute!]! @derivedFrom(field: "attribute")
+  # metadata: [MetadataAttribute!]! @derivedFrom(field: "attribute")
   name: String!
   percentage: BigDecimal!
   value: String!
@@ -22,6 +25,10 @@ type Attribute @entity {
 
 type Collection @entity {
   id: ID!
+
+  "Internal for tracking tokenIds minted for a collection"
+  _tokenIds: [BigInt!]!
+
   address: Bytes!
   attributes: [Attribute!] @derivedFrom(field: "collection")
   creator: Creator!
@@ -35,7 +42,6 @@ type Collection @entity {
   tokens: [Token!]! @derivedFrom(field: "collection")
   totalListings: BigInt!
   totalSales: BigInt!
-  totalTokens: BigInt!
   totalVolume: BigInt!
 }
 
@@ -66,10 +72,17 @@ type Listing @entity {
 
 type Metadata @entity {
   id: ID!
-  attributes: [Attribute!] @derivedFrom(field: "metadata")
+  attributes: [MetadataAttribute!] @derivedFrom(field: "metadata")
   description: String!
   image: String!
   name: String!
+  token: Token!
+}
+
+type MetadataAttribute @entity {
+  id: ID!
+  attribute: Attribute!
+  metadata: Metadata!
 }
 
 type Student @entity {
@@ -78,13 +91,22 @@ type Student @entity {
 
 type Token @entity {
   id: ID!
+  _attributes: [String!]!
+  attributes: [TokenAttribute!] @derivedFrom(field: "token")
   collection: Collection!
   floorPrice: BigInt
   listings: [Listing!] @derivedFrom(field: "token")
   metadata: Metadata
   metadataUri: String
   name: String
+  rarity: BigDecimal
   tokenId: BigInt!
+}
+
+type TokenAttribute @entity {
+  id: ID!
+  attribute: Attribute!
+  token: Token!
 }
 
 type User @entity {

@@ -62,7 +62,7 @@ export function handleTransferSingle(event: TransferSingle): void {
       "Qmf2a3J62DCA6wWc6pY9xqHWyexqG17srVeAUrXiewSB1Q"
     );
 
-    addMetadataToToken(metadataUri, token.id, tokenId);
+    addMetadataToToken(metadataUri, token, tokenId);
 
     token.metadata = token.id;
     token.metadataUri = metadataUri;
