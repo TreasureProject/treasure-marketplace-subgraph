@@ -143,131 +143,143 @@ export function getOrCreateUserToken(id: string): UserToken {
 }
 
 export function addMetadataToToken(metadataUri: string, token: Token): void {
-  if (metadataUri.startsWith("https://")) {
-    let bytes = ipfs.cat(metadataUri.replace(IPFS_GATEWAY, ""));
+  if (!metadataUri.startsWith("https://")) {
+    return;
+  }
 
-    if (bytes === null) {
-      log.info("[IPFS] Null bytes for token {}", [token.tokenId.toString()]);
-    } else {
-      let collection = Collection.load(token.collection);
-      let collectionAddress = Address.fromString(token.collection);
-      let obj = json.fromBytes(bytes);
+  let bytes = ipfs.cat(metadataUri.replace(IPFS_GATEWAY, ""));
 
-      if (obj !== null) {
-        function getString(value: JSONValue | null): string {
-          return value ? value.toString() : "";
-        }
+  if (bytes === null) {
+    log.info("[IPFS] Null bytes for token {}", [token.tokenId.toString()]);
 
-        // This is because the Extra Life metadata is an array of a single object.
-        // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
-        if (obj.kind === JSONValueKind.ARRAY) {
-          obj = obj.toArray()[0];
-        }
+    return;
+  }
 
-        let object = obj.toObject();
-        let description = getString(object.get("description"));
-        let image = getString(object.get("image"));
-        let name = getString(object.get("name"));
+  let obj = json.fromBytes(bytes);
 
-        let metadata = getOrCreateMetadata(token.id);
+  if (obj === null) {
+    log.info("[JSON] Null bytes for token {}", [token.tokenId.toString()]);
 
-        metadata.description = description;
-        metadata.image = image.replace(
-          "https://gateway.pinata.cloud/ipfs/",
-          "ipfs://"
+    return;
+  }
+
+  let collection = Collection.load(token.collection);
+  let collectionAddress = Address.fromString(token.collection);
+
+  function getString(value: JSONValue | null): string {
+    return value ? value.toString() : "";
+  }
+
+  // This is because the Extra Life metadata is an array of a single object.
+  // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
+  if (obj.kind === JSONValueKind.ARRAY) {
+    obj = obj.toArray()[0];
+  }
+
+  let object = obj.toObject();
+  let description = getString(object.get("description"));
+  let image = getString(object.get("image"));
+  let name = getString(object.get("name"));
+
+  let metadata = getOrCreateMetadata(token.id);
+
+  metadata.description = description;
+  metadata.image = image.replace(
+    "https://gateway.pinata.cloud/ipfs/",
+    "ipfs://"
+  );
+  metadata.name = name;
+  metadata.token = token.id;
+
+  metadata.save();
+
+  // Attributes
+  let attributes = object.get("attributes");
+
+  if (!attributes || (attributes && attributes.kind !== JSONValueKind.ARRAY)) {
+    return;
+  }
+
+  let items = attributes.toArray();
+
+  for (let index = 0; index < items.length; index++) {
+    let item = items[index];
+
+    if (item.kind !== JSONValueKind.OBJECT) {
+      continue;
+    }
+
+    let object = item.toObject();
+    let type = getString(object.get("trait_type"));
+    let jsonValue = object.get("value");
+
+    let value =
+      jsonValue && jsonValue.kind === JSONValueKind.NUMBER
+        ? jsonValue.toI64().toString()
+        : getString(jsonValue);
+
+    let attribute = getOrCreateAttribute(
+      getAttributeId(collectionAddress, type, value)
+    );
+
+    attribute.name = type;
+    attribute.value = value;
+
+    if (!attribute._tokenIds.includes(token.tokenId)) {
+      attribute._tokenIds = attribute._tokenIds.concat([token.tokenId]);
+      attribute.percentage = toBigDecimal(0);
+    }
+
+    createMetadataAttribute(attribute.id, metadata.id);
+
+    attribute.save();
+
+    let lookup = `${type},${value}`;
+    let filters = token.filters;
+
+    if (!filters.includes(lookup)) {
+      token.filters = filters.concat([lookup]);
+      token.save();
+    }
+  }
+
+  // Will never happen, but helps AssemblyScript types
+  if (!collection) {
+    return;
+  }
+
+  let ids = collection._tokenIds;
+
+  for (let index = 0; index < ids.length; index++) {
+    let id = ids[index];
+
+    let _token = getOrCreateToken(getTokenId(collectionAddress, id));
+
+    if (_token) {
+      let filters = _token.filters;
+      let rarity = toBigDecimal(0);
+
+      for (let _index = 0; _index < filters.length; _index++) {
+        let filter = filters[_index];
+        let split = filter.split(",");
+        let name = split[0];
+        let value = split[1];
+        let attribute = getOrCreateAttribute(
+          getAttributeId(collectionAddress, name, value)
         );
-        metadata.name = name;
-        metadata.token = token.id;
 
-        // Attributes
-        let attributes = object.get("attributes");
+        let count = attribute._tokenIds.length;
+        let total = collection._tokenIds.length;
 
-        if (attributes && attributes.kind === JSONValueKind.ARRAY) {
-          let items = attributes.toArray();
+        attribute.percentage = toBigDecimal(count).div(toBigDecimal(total));
 
-          for (let index = 0; index < items.length; index++) {
-            let item = items[index];
+        rarity = rarity.plus(toBigDecimal(1).div(attribute.percentage));
 
-            if (item.kind === JSONValueKind.OBJECT) {
-              let object = item.toObject();
-              let type = getString(object.get("trait_type"));
-              let jsonValue = object.get("value");
-
-              let value =
-                jsonValue && jsonValue.kind === JSONValueKind.NUMBER
-                  ? jsonValue.toI64().toString()
-                  : getString(jsonValue);
-
-              let attribute = getOrCreateAttribute(
-                getAttributeId(collectionAddress, type, value)
-              );
-
-              attribute.name = type;
-              attribute.value = value;
-
-              if (!attribute._tokenIds.includes(token.tokenId)) {
-                attribute._tokenIds = attribute._tokenIds.concat([
-                  token.tokenId,
-                ]);
-                attribute.percentage = toBigDecimal(0);
-              }
-
-              createMetadataAttribute(attribute.id, metadata.id);
-
-              attribute.save();
-
-              let lookup = `${type},${value}`;
-              let filters = token.filters;
-
-              if (!filters.includes(lookup)) {
-                token.filters = filters.concat([lookup]);
-                token.save();
-              }
-            }
-          }
-        }
-
-        metadata.save();
-
-        if (collection) {
-          let ids = collection._tokenIds;
-
-          for (let index = 0; index < ids.length; index++) {
-            let id = ids[index];
-
-            let _token = getOrCreateToken(getTokenId(collectionAddress, id));
-
-            if (_token) {
-              let filters = _token.filters;
-              let rarity = toBigDecimal(0);
-
-              for (let _index = 0; _index < filters.length; _index++) {
-                let filter = filters[_index];
-                let split = filter.split(",");
-                let name = split[0];
-                let value = split[1];
-                let attribute = getOrCreateAttribute(
-                  getAttributeId(collectionAddress, name, value)
-                );
-
-                let count = attribute._tokenIds.length;
-                let total = collection._tokenIds.length;
-
-                attribute.percentage = toBigDecimal(count).div(
-                  toBigDecimal(total)
-                );
-
-                rarity = rarity.plus(toBigDecimal(1).div(attribute.percentage));
-
-                attribute.save();
-              }
-
-              _token.rarity = rarity;
-              _token.save();
-            }
-          }
-        }
+        attribute.save();
       }
+
+      _token.rarity = rarity;
+      _token.save();
     }
   }
 }
