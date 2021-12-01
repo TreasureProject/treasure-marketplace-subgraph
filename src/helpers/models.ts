@@ -17,7 +17,6 @@ import {
   Metadata,
   MetadataAttribute,
   Token,
-  TokenAttribute,
   User,
   UserToken,
 } from "../../generated/schema";
@@ -26,7 +25,6 @@ import {
   ZERO_BI,
   removeAtIndex,
   getAttributeId,
-  ONE_BI,
   toBigDecimal,
   getTokenId,
 } from ".";
@@ -101,7 +99,7 @@ export function getOrCreateToken(id: string): Token {
   if (!token) {
     token = new Token(id);
 
-    token._attributes = [];
+    token.filters = [];
   }
 
   return token;
@@ -180,7 +178,6 @@ export function addMetadataToToken(
             let item = items[index];
 
             if (item.kind === JSONValueKind.OBJECT) {
-              // let collectionId = id.split("-")[0];
               let object = item.toObject();
               let type = getString(object.get("trait_type"));
               let jsonValue = object.get("value");
@@ -199,7 +196,6 @@ export function addMetadataToToken(
 
               if (!attribute._tokenIds.includes(tokenId)) {
                 attribute._tokenIds = attribute._tokenIds.concat([tokenId]);
-                // attribute.count = attribute.count.plus(ONE_BI);
                 attribute.percentage = BigDecimal.fromString("0");
               }
 
@@ -224,20 +220,13 @@ export function addMetadataToToken(
                 relationship.save();
               }
 
-              if (!TokenAttribute.load(relationshipId)) {
-                let relationship = new TokenAttribute(relationshipId);
-
-                relationship.attribute = attribute.id;
-                relationship.token = token.id;
-                relationship.save();
-              }
-
               attribute.save();
 
               let lookup = `${type},${value}`;
+              let filters = token.filters;
 
-              if (!token._attributes.includes(lookup)) {
-                token._attributes = token._attributes.concat([lookup]);
+              if (!filters.includes(lookup)) {
+                token.filters = filters.concat([lookup]);
                 token.save();
               }
             }
@@ -252,37 +241,38 @@ export function addMetadataToToken(
           for (let index = 0; index < ids.length; index++) {
             let id = ids[index];
 
-            if (!id.equals(tokenId)) {
-              let _token = getOrCreateToken(getTokenId(collectionAddress, id));
+            let _token = getOrCreateToken(getTokenId(collectionAddress, id));
 
-              if (_token) {
-                let lookups = _token._attributes;
+            if (_token) {
+              let filters = _token.filters;
+              let rarity = toBigDecimal(0);
 
-                for (let _index = 0; _index < lookups.length; _index++) {
-                  let lookup = lookups[_index];
-                  let split = lookup.split(",");
-                  let name = split[0];
-                  let value = split[1];
-                  let attribute = getOrCreateAttribute(
-                    getAttributeId(collectionAddress, name, value)
-                  );
+              for (let _index = 0; _index < filters.length; _index++) {
+                let filter = filters[_index];
+                let split = filter.split(",");
+                let name = split[0];
+                let value = split[1];
+                let attribute = getOrCreateAttribute(
+                  getAttributeId(collectionAddress, name, value)
+                );
 
-                  let count = attribute._tokenIds.length;
-                  let total = collection._tokenIds.length;
+                let count = attribute._tokenIds.length;
+                let total = collection._tokenIds.length;
 
-                  attribute.percentage = toBigDecimal(count).div(
-                    toBigDecimal(total)
-                  );
+                attribute.percentage = toBigDecimal(count).div(
+                  toBigDecimal(total)
+                );
 
-                  attribute.save();
-                }
+                rarity = rarity.plus(toBigDecimal(1).div(attribute.percentage));
+
+                attribute.save();
               }
+
+              _token.rarity = rarity;
+              _token.save();
             }
           }
         }
-
-        token.rarity = toBigDecimal(0);
-        token.save();
       }
     }
   }

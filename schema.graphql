@@ -16,8 +16,7 @@ type Attribute @entity {
   _tokenIds: [BigInt!]!
 
   collection: Collection!
-  tokens: [TokenAttribute!]! @derivedFrom(field: "attribute")
-  # metadata: [MetadataAttribute!]! @derivedFrom(field: "attribute")
+  metadata: [MetadataAttribute!]! @derivedFrom(field: "attribute")
   name: String!
   percentage: BigDecimal!
   value: String!
@@ -30,7 +29,6 @@ type Collection @entity {
   _tokenIds: [BigInt!]!
 
   address: Bytes!
-  attributes: [Attribute!] @derivedFrom(field: "collection")
   creator: Creator!
   floorPrice: BigInt!
   listingIds: [String!]!
@@ -91,9 +89,11 @@ type Student @entity {
 
 type Token @entity {
   id: ID!
-  _attributes: [String!]!
-  attributes: [TokenAttribute!] @derivedFrom(field: "token")
   collection: Collection!
+
+  "Used to support multiple filters with metadata attributes"
+  filters: [String!]!
+  
   floorPrice: BigInt
   listings: [Listing!] @derivedFrom(field: "token")
   metadata: Metadata
@@ -101,12 +101,6 @@ type Token @entity {
   name: String
   rarity: BigDecimal
   tokenId: BigInt!
-}
-
-type TokenAttribute @entity {
-  id: ID!
-  attribute: Attribute!
-  token: Token!
 }
 
 type User @entity {

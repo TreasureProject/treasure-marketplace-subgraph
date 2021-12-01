@@ -1,5 +1,6 @@
 import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
 import { Listing, Metadata } from "../../generated/schema";
+import { SmolBrains } from "../../generated/Smol Brains School/SmolBrains";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
@@ -15,6 +16,8 @@ import {
   isSafeTransferFrom,
   removeAtIndex,
   updateCollectionFloorAndTotal,
+  getOrCreateAttribute,
+  getAttributeId,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -135,7 +138,7 @@ export function handleTransfer(event: Transfer): void {
 }
 
 export function updateMetadata(address: Address, tokenId: BigInt): void {
-  let contract = ERC721.bind(address);
+  let contract = SmolBrains.bind(address);
   let uri = contract.try_tokenURI(tokenId);
   let token = getOrCreateToken(getTokenId(address, tokenId));
 
@@ -144,5 +147,17 @@ export function updateMetadata(address: Address, tokenId: BigInt): void {
     token.save();
 
     addMetadataToToken(uri.value, token, tokenId);
+  }
+
+  // Snapshot IQ
+  let iq = contract.try_brainz(tokenId);
+
+  if (!iq.reverted) {
+    let attribute = getOrCreateAttribute(
+      getAttributeId(address, "IQ", tokenId.toHexString())
+    );
+
+    attribute.value = iq.value.toString();
+    attribute.save();
   }
 }

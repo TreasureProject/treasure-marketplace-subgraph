@@ -5,17 +5,27 @@ import {
   SMOLBRAIN_ADDRESS,
   getCreator,
   getListingId,
+  getTokenId,
   getOrCreateCollection,
+  getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
   updateCollectionFloorAndTotal,
+  isMint,
+  getOrCreateAttribute,
+  getAttributeId,
+  toBigDecimal,
 } from "../helpers";
 import {
   DropSchool,
   JoinSchool,
 } from "../../generated/Smol Brains School/School";
 import { Address, store } from "@graphprotocol/graph-ts";
-import { Listing, Student } from "../../generated/schema";
+import {
+  Listing,
+  MetadataAttribute,
+  Student,
+} from "../../generated/schema";
 
 export function handleTransfer(event: Transfer): void {
   let collection = getOrCreateCollection(event.address.toHexString());
@@ -25,6 +35,38 @@ export function handleTransfer(event: Transfer): void {
   collection.save();
 
   ERC721.handleTransfer(event);
+
+  // Lets setup our initial IQ
+  let params = event.params;
+  let tokenId = params.tokenId;
+  let address = event.address;
+
+  if (isMint(params.from)) {
+    let token = getOrCreateToken(getTokenId(address, tokenId));
+    let attribute = getOrCreateAttribute(
+      getAttributeId(address, "IQ", tokenId.toHexString())
+    );
+
+    attribute.name = "IQ";
+    attribute.percentage = toBigDecimal(0);
+    attribute.value = "0";
+
+    attribute._tokenIds = [];
+    attribute.collection = collection.id;
+
+    let relationshipId = [token.id, attribute.id].join("-");
+
+    if (!MetadataAttribute.load(relationshipId)) {
+      let relationship = new MetadataAttribute(relationshipId);
+
+      relationship.attribute = attribute.id;
+      relationship.metadata = token.id;
+      relationship.save();
+    }
+
+    attribute.save();
+    token.save();
+  }
 }
 
 export function handleDropSchool(event: DropSchool): void {
