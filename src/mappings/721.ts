@@ -19,6 +19,7 @@ import {
   getOrCreateAttribute,
   getAttributeId,
   isMint,
+  toBigDecimal,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -139,7 +140,34 @@ export function updateMetadata(address: Address, tokenId: BigInt): void {
   let uri = contract.try_tokenURI(tokenId);
   let token = getOrCreateToken(getTokenId(address, tokenId));
 
+  // Only way our tokeknURI changes is when our head size increases. So lets remove the old attribute.
   if (!uri.reverted && token.metadataUri != uri.value) {
+    let metadataUri = token.metadataUri
+
+    if (metadataUri) {
+      let head = metadataUri.split("/").reverse()[0];
+      let name = "Head Size";
+      let attribute = getOrCreateAttribute(getAttributeId(address, name, head));
+      let lookup = `${name},${head}`;
+      let filters = token.filters;
+
+      if (attribute._tokenIds.includes(tokenId)) {
+        attribute._tokenIds = removeAtIndex(
+          attribute._tokenIds,
+          attribute._tokenIds.indexOf(tokenId)
+        );
+        attribute.percentage = toBigDecimal(0);
+        attribute.save();
+      }
+
+      if (filters.includes(lookup)) {
+        token.filters = removeAtIndex(filters, filters.indexOf(lookup));
+        token.save();
+      }
+
+      store.remove("MetadataAttribute", `${token.id}-${attribute.id}`);
+    }
+
     token.metadataUri = uri.value;
     token.save();
 
