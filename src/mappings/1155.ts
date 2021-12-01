@@ -44,6 +44,8 @@ export function handleTransferSingle(event: TransferSingle): void {
   }
 
   token.collection = collection.id;
+  token.name = getName(tokenId);
+  token.tokenId = tokenId;
 
   if (!uri.reverted) {
     let metadataUri = uri.value.endsWith(".json")
@@ -62,7 +64,7 @@ export function handleTransferSingle(event: TransferSingle): void {
       "Qmf2a3J62DCA6wWc6pY9xqHWyexqG17srVeAUrXiewSB1Q"
     );
 
-    addMetadataToToken(metadataUri, token, tokenId);
+    addMetadataToToken(metadataUri, token);
 
     token.metadata = token.id;
     token.metadataUri = metadataUri;
@@ -143,9 +145,6 @@ export function handleTransferSingle(event: TransferSingle): void {
     toUser.save();
     userToken.save();
   }
-
-  token.name = getName(tokenId);
-  token.tokenId = tokenId;
 
   collection.save();
   token.save();

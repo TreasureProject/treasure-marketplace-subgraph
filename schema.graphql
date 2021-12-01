@@ -15,7 +15,6 @@ type Attribute @entity {
   "Internal for tracking tokenIds calculated"
   _tokenIds: [BigInt!]!
 
-  collection: Collection!
   metadata: [MetadataAttribute!]! @derivedFrom(field: "attribute")
   name: String!
   percentage: BigDecimal!
@@ -52,6 +51,7 @@ type Creator @entity {
 
 type Listing @entity {
   id: ID!
+
   blockTimestamp: BigInt!
   buyer: User
   collection: Collection!
@@ -60,11 +60,14 @@ type Listing @entity {
   nicePrice: String
   pricePerItem: BigInt!
   quantity: BigInt!
+  seller: User!
   status: Status!
   token: Token!
   tokenName: String
   totalPrice: String
   transactionLink: String
+
+  "deprecated: use seller field"
   user: User!
 }
 
@@ -99,6 +102,10 @@ type Token @entity {
   metadata: Metadata
   metadataUri: String
   name: String
+
+  "Owner of token for ERC721, null for ERC1155"
+  owner: User
+
   rarity: BigDecimal
   tokenId: BigInt!
 }

@@ -119,6 +119,7 @@ export function handleItemListed(event: ItemListed): void {
   listing.expires = params.expirationTime;
   listing.pricePerItem = pricePerItem;
   listing.quantity = quantity;
+  listing.seller = seller.toHexString();
   listing.status = status;
   listing.token = token.id;
   listing.tokenName = token.name;

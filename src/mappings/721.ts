@@ -18,6 +18,7 @@ import {
   updateCollectionFloorAndTotal,
   getOrCreateAttribute,
   getAttributeId,
+  isMint,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -39,27 +40,26 @@ export function handleTransfer(event: Transfer): void {
   collection.standard = "ERC721";
 
   // Mint, increment token count
-  if (
-    from.toHexString() == ZERO_ADDRESS &&
-    !collection._tokenIds.includes(tokenId)
-  ) {
+  if (isMint(from) && !collection._tokenIds.includes(tokenId)) {
     collection._tokenIds = collection._tokenIds.concat([tokenId]);
-    // collection.totalTokens = collection.totalTokens.plus(ONE_BI);
     collection.save();
   }
 
   token.collection = collection.id;
+  token.metadata = token.id;
+  token.owner = buyer.id;
+  token.tokenId = tokenId;
 
   if (!uri.reverted) {
     token.metadataUri = uri.value;
 
-    addMetadataToToken(uri.value, token, tokenId);
+    addMetadataToToken(uri.value, token);
   } else if (collection.name == "Smol Brains" && tokenId.equals(ZERO_BI)) {
     // This token was transferred on contract creation so there is no metadataUri yet
     let metadataUri =
       "https://treasure-marketplace.mypinata.cloud/ipfs/QmZg7bqH36fnKUcmKDhqGm65j5hbFeDZcogoxxiFMLeybE/0/0";
 
-    addMetadataToToken(metadataUri, token, tokenId);
+    addMetadataToToken(metadataUri, token);
 
     token.metadataUri = metadataUri;
   }
@@ -79,11 +79,8 @@ export function handleTransfer(event: Transfer): void {
     ]);
   }
 
-  token.metadata = token.id;
-  token.tokenId = tokenId;
-
   // Not a mint, remove it from the transferrer
-  if (from.toHexString() != ZERO_ADDRESS) {
+  if (!isMint(from)) {
     let seller = getListingId(from, address, tokenId);
     let listing = Listing.load(seller);
 
@@ -118,7 +115,7 @@ export function handleTransfer(event: Transfer): void {
 
       metadataToken.metadataUri = uri.value;
 
-      addMetadataToToken(uri.value, metadataToken, metadataId);
+      addMetadataToToken(uri.value, metadataToken);
 
       if (Metadata.load(metadataTokenId)) {
         collection.missingMetadataIds = removeAtIndex(
@@ -146,7 +143,7 @@ export function updateMetadata(address: Address, tokenId: BigInt): void {
     token.metadataUri = uri.value;
     token.save();
 
-    addMetadataToToken(uri.value, token, tokenId);
+    addMetadataToToken(uri.value, token);
   }
 
   // Snapshot IQ

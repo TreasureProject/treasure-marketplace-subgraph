@@ -3,6 +3,7 @@ import { Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
   SMOLBRAIN_ADDRESS,
+  ZERO_BI,
   getCreator,
   getListingId,
   getTokenId,
@@ -15,17 +16,14 @@ import {
   getOrCreateAttribute,
   getAttributeId,
   toBigDecimal,
+  createMetadataAttribute,
 } from "../helpers";
 import {
   DropSchool,
   JoinSchool,
 } from "../../generated/Smol Brains School/School";
 import { Address, store } from "@graphprotocol/graph-ts";
-import {
-  Listing,
-  MetadataAttribute,
-  Student,
-} from "../../generated/schema";
+import { Listing, Student } from "../../generated/schema";
 
 export function handleTransfer(event: Transfer): void {
   let collection = getOrCreateCollection(event.address.toHexString());
@@ -46,23 +44,14 @@ export function handleTransfer(event: Transfer): void {
     let attribute = getOrCreateAttribute(
       getAttributeId(address, "IQ", tokenId.toHexString())
     );
-
+    
     attribute.name = "IQ";
     attribute.percentage = toBigDecimal(0);
-    attribute.value = "0";
+    attribute.value = ZERO_BI.toString();
 
     attribute._tokenIds = [];
-    attribute.collection = collection.id;
 
-    let relationshipId = [token.id, attribute.id].join("-");
-
-    if (!MetadataAttribute.load(relationshipId)) {
-      let relationship = new MetadataAttribute(relationshipId);
-
-      relationship.attribute = attribute.id;
-      relationship.metadata = token.id;
-      relationship.save();
-    }
+    createMetadataAttribute(attribute.id, token.id);
 
     attribute.save();
     token.save();

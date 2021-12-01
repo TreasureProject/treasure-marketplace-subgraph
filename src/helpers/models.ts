@@ -29,6 +29,21 @@ import {
   getTokenId,
 } from ".";
 
+export function createMetadataAttribute(
+  attributeId: string,
+  metadataId: string
+): void {
+  let relationshipId = [metadataId, attributeId].join("-");
+
+  if (!MetadataAttribute.load(relationshipId)) {
+    let relationship = new MetadataAttribute(relationshipId);
+
+    relationship.attribute = attributeId;
+    relationship.metadata = metadataId;
+    relationship.save();
+  }
+}
+
 export function getOrCreateAttribute(id: string): Attribute {
   let attribute = Attribute.load(id);
 
@@ -127,16 +142,12 @@ export function getOrCreateUserToken(id: string): UserToken {
   return userToken;
 }
 
-export function addMetadataToToken(
-  metadataUri: string,
-  token: Token,
-  tokenId: BigInt
-): void {
+export function addMetadataToToken(metadataUri: string, token: Token): void {
   if (metadataUri.startsWith("https://")) {
     let bytes = ipfs.cat(metadataUri.replace(IPFS_GATEWAY, ""));
 
     if (bytes === null) {
-      log.info("[IPFS] Null bytes for token {}", [tokenId.toString()]);
+      log.info("[IPFS] Null bytes for token {}", [token.tokenId.toString()]);
     } else {
       let collection = Collection.load(token.collection);
       let collectionAddress = Address.fromString(token.collection);
@@ -194,31 +205,14 @@ export function addMetadataToToken(
               attribute.name = type;
               attribute.value = value;
 
-              if (!attribute._tokenIds.includes(tokenId)) {
-                attribute._tokenIds = attribute._tokenIds.concat([tokenId]);
-                attribute.percentage = BigDecimal.fromString("0");
+              if (!attribute._tokenIds.includes(token.tokenId)) {
+                attribute._tokenIds = attribute._tokenIds.concat([
+                  token.tokenId,
+                ]);
+                attribute.percentage = toBigDecimal(0);
               }
 
-              if (collection) {
-                let count = attribute._tokenIds.length;
-                let total = collection._tokenIds.length;
-
-                attribute.percentage = toBigDecimal(count).div(
-                  toBigDecimal(total)
-                );
-
-                attribute.collection = collection.id;
-              }
-
-              let relationshipId = [metadata.id, attribute.id].join("-");
-
-              if (!MetadataAttribute.load(relationshipId)) {
-                let relationship = new MetadataAttribute(relationshipId);
-
-                relationship.attribute = attribute.id;
-                relationship.metadata = metadata.id;
-                relationship.save();
-              }
+              createMetadataAttribute(attribute.id, metadata.id);
 
               attribute.save();
 
