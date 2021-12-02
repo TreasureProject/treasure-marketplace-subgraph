@@ -106,6 +106,7 @@ type Token @entity {
   "Owner of token for ERC721, null for ERC1155"
   owner: User
 
+  rank: Int
   rarity: BigDecimal
   tokenId: BigInt!
 }

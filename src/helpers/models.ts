@@ -29,6 +29,11 @@ import {
   getTokenId,
 } from ".";
 
+class TokenRarity {
+  token: Token;
+  rarity: BigDecimal;
+}
+
 export function createMetadataAttribute(
   attributeId: string,
   metadataId: string
@@ -249,38 +254,55 @@ export function addMetadataToToken(metadataUri: string, token: Token): void {
   }
 
   let ids = collection._tokenIds;
+  let tokens: TokenRarity[] = [];
 
   for (let index = 0; index < ids.length; index++) {
     let id = ids[index];
 
-    let _token = getOrCreateToken(getTokenId(collectionAddress, id));
+    tokens[index] = {
+      token: getOrCreateToken(getTokenId(collectionAddress, id)),
+      rarity: toBigDecimal(0),
+    };
+  }
 
-    if (_token) {
-      let filters = _token.filters;
-      let rarity = toBigDecimal(0);
+  for (let index = 0; index < tokens.length; index++) {
+    let _token = tokens[index].token;
 
-      for (let _index = 0; _index < filters.length; _index++) {
-        let filter = filters[_index];
-        let split = filter.split(",");
-        let name = split[0];
-        let value = split[1];
-        let attribute = getOrCreateAttribute(
-          getAttributeId(collectionAddress, name, value)
-        );
+    let filters = _token.filters;
+    let rarity = toBigDecimal(0);
 
-        let count = attribute._tokenIds.length;
-        let total = collection._tokenIds.length;
+    for (let _index = 0; _index < filters.length; _index++) {
+      let filter = filters[_index];
+      let split = filter.split(",");
+      let name = split[0];
+      let value = split[1];
+      let attribute = getOrCreateAttribute(
+        getAttributeId(collectionAddress, name, value)
+      );
 
-        attribute.percentage = toBigDecimal(count).div(toBigDecimal(total));
+      let count = attribute._tokenIds.length;
+      let total = collection._tokenIds.length;
 
+      attribute.percentage = toBigDecimal(count).div(toBigDecimal(total));
+
+      // Don't include IQ or Head Size in rarity calculation
+      if (!["IQ", "Head Size"].includes(name)) {
         rarity = rarity.plus(toBigDecimal(1).div(attribute.percentage));
-
-        attribute.save();
       }
 
-      _token.rarity = rarity;
-      _token.save();
+      attribute.save();
     }
+
+    _token.rarity = tokens[index].rarity = rarity;
+  }
+
+  tokens.sort((left, right) => (right.rarity.gt(left.rarity) ? 1 : -1));
+
+  for (let index = 0; index < tokens.length; index++) {
+    let _token = tokens[index].token;
+
+    _token.rank = index + 1;
+    _token.save();
   }
 }
 
