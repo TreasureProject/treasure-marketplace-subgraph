@@ -22,6 +22,7 @@ import {
 } from "../../generated/schema";
 import {
   IPFS_GATEWAY,
+  RARITY_CALCULATION_BLOCK,
   ZERO_BI,
   getAttributeId,
   getTokenId,
@@ -67,12 +68,14 @@ export function getOrCreateCollection(id: string): Collection {
   if (!collection) {
     collection = new Collection(id);
 
+    collection._listingIds = [];
+    collection._missingMetadataIds = [];
     collection._tokenIds = [];
+
     collection.floorPrice = ZERO_BI;
-    collection.listingIds = [];
-    collection.missingMetadataIds = [];
     collection.totalListings = ZERO_BI;
     collection.totalSales = ZERO_BI;
+    
     collection.save();
   }
 
@@ -151,7 +154,7 @@ function getString(value: JSONValue | null): string {
   return value ? value.toString() : "";
 }
 
-export function addMetadataToToken(token: Token): void {
+export function addMetadataToToken(token: Token, block: BigInt): void {
   let metadataUri = token.metadataUri;
 
   if (
@@ -259,6 +262,10 @@ export function addMetadataToToken(token: Token): void {
     }
   }
 
+  if (block.lt(RARITY_CALCULATION_BLOCK)) {
+    return
+  }
+
   let ids = collection._tokenIds;
   let tokens: TokenRarity[] = [];
 
@@ -314,7 +321,7 @@ export function addMetadataToToken(token: Token): void {
 
 export function updateCollectionFloorAndTotal(collection: Collection): void {
   let floorPrices = new TypedMap<string, BigInt>();
-  let listings = collection.listingIds;
+  let listings = collection._listingIds;
 
   collection.floorPrice = ZERO_BI;
 
@@ -340,7 +347,7 @@ export function updateCollectionFloorAndTotal(collection: Collection): void {
         collection.floorPrice = pricePerItem;
       }
     } else {
-      collection.listingIds = removeAtIndex(collection.listingIds, index);
+      collection._listingIds = removeAtIndex(collection._listingIds, index);
     }
   }
 
@@ -356,7 +363,7 @@ export function updateCollectionFloorAndTotal(collection: Collection): void {
     }
   }
 
-  collection.totalListings = BigInt.fromI32(collection.listingIds.length);
+  collection.totalListings = BigInt.fromI32(collection._listingIds.length);
 
   collection.save();
 }
