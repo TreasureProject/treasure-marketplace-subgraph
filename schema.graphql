@@ -15,6 +15,7 @@ type Attribute @entity {
   "Internal for tracking tokenIds calculated"
   _tokenIds: [BigInt!]!
 
+  collection: Collection!
   metadata: [MetadataAttribute!]! @derivedFrom(field: "attribute")
   name: String!
   percentage: BigDecimal!
@@ -28,6 +29,10 @@ type Collection @entity {
   _tokenIds: [BigInt!]!
 
   address: Bytes!
+
+  "Used to determine possible filters for collection"
+  attributes: [Attribute!] @derivedFrom(field: "collection")
+
   creator: Creator!
   floorPrice: BigInt!
   listingIds: [String!]!
@@ -96,7 +101,7 @@ type Token @entity {
 
   "Used to support multiple filters with metadata attributes"
   filters: [String!]!
-  
+
   floorPrice: BigInt
   listings: [Listing!] @derivedFrom(field: "token")
   metadata: Metadata

@@ -210,6 +210,11 @@ export function addMetadataToToken(token: Token): void {
     return;
   }
 
+  // Will never happen, but helps AssemblyScript types
+  if (!collection) {
+    return;
+  }
+
   let items = attributes.toArray();
 
   for (let index = 0; index < items.length; index++) {
@@ -232,6 +237,7 @@ export function addMetadataToToken(token: Token): void {
       getAttributeId(collectionAddress, type, value)
     );
 
+    attribute.collection = collection.id;
     attribute.name = type;
     attribute.value = value;
 
@@ -251,11 +257,6 @@ export function addMetadataToToken(token: Token): void {
       token.filters = filters.concat([lookup]);
       token.save();
     }
-  }
-
-  // Will never happen, but helps AssemblyScript types
-  if (!collection) {
-    return;
   }
 
   let ids = collection._tokenIds;
