@@ -68,7 +68,7 @@ export function handleTransferSingle(event: TransferSingle): void {
     token.metadata = token.id;
     token.metadataUri = metadataUri;
 
-    addMetadataToToken(token);
+    addMetadataToToken(token, ZERO_BI);
   }
 
   if (STAKING_ADDRESS == to.toHexString()) {
@@ -98,7 +98,7 @@ export function handleTransferSingle(event: TransferSingle): void {
       listing.status = "Active";
       listing.save();
 
-      collection.listingIds = collection.listingIds.concat([listing.id]);
+      collection._listingIds = collection._listingIds.concat([listing.id]);
 
       updateCollectionFloorAndTotal(collection);
     } else {

@@ -9,6 +9,10 @@ export const EXPLORER =
 
 export const IPFS_GATEWAY = "https://treasure-marketplace.mypinata.cloud/ipfs/";
 
+export const RARITY_CALCULATION_BLOCK = BigInt.fromI32(
+  dataSource.network() == "rinkeby" ? 9712253 : 3521047
+);
+
 export const SMOLBRAIN_ADDRESS =
   dataSource.network() == "rinkeby"
     ? "0x4feea06250d9f315a6a454c9c8a7fcbcf8701210"

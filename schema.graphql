@@ -25,6 +25,12 @@ type Attribute @entity {
 type Collection @entity {
   id: ID!
 
+  "Internal for tracking listings"
+  _listingIds: [String!]!
+  
+  "Internal for tracking metadata failures to retry"
+  _missingMetadataIds: [BigInt!]!
+  
   "Internal for tracking tokenIds minted for a collection"
   _tokenIds: [BigInt!]!
 
@@ -35,9 +41,7 @@ type Collection @entity {
 
   creator: Creator!
   floorPrice: BigInt!
-  listingIds: [String!]!
   listings: [Listing!]! @derivedFrom(field: "collection")
-  missingMetadataIds: [BigInt!]!
   name: String!
   standard: TokenStandard
   symbol: String

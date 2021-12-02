@@ -60,7 +60,7 @@ export function handleTransfer(event: Transfer): void {
   if (metadataUri !== token.metadataUri) {
     token.metadataUri = metadataUri;
 
-    addMetadataToToken(token);
+    addMetadataToToken(token, event.block.number);
   }
 
   let metadata = Metadata.load(token.id);
@@ -73,7 +73,7 @@ export function handleTransfer(event: Transfer): void {
 
   // Add missing metadata id to be tried again
   if (!metadata) {
-    collection.missingMetadataIds = collection.missingMetadataIds.concat([
+    collection._missingMetadataIds = collection._missingMetadataIds.concat([
       tokenId,
     ]);
   }
@@ -102,7 +102,7 @@ export function handleTransfer(event: Transfer): void {
   userToken.user = buyer.id;
 
   // Try fetching missing metadata
-  let metadataIds = collection.missingMetadataIds;
+  let metadataIds = collection._missingMetadataIds;
 
   for (let index = 0; index < metadataIds.length; index++) {
     let metadataId = metadataIds[index];
@@ -114,11 +114,11 @@ export function handleTransfer(event: Transfer): void {
 
       metadataToken.metadataUri = uri.value;
 
-      addMetadataToToken(metadataToken);
+      addMetadataToToken(metadataToken, event.block.number);
 
       if (Metadata.load(metadataTokenId)) {
-        collection.missingMetadataIds = removeAtIndex(
-          collection.missingMetadataIds,
+        collection._missingMetadataIds = removeAtIndex(
+          collection._missingMetadataIds,
           index
         );
       }
@@ -133,7 +133,7 @@ export function handleTransfer(event: Transfer): void {
   buyer.save();
 }
 
-export function updateMetadata(address: Address, tokenId: BigInt): void {
+export function updateMetadata(address: Address, tokenId: BigInt, block: BigInt): void {
   let contract = SmolBrains.bind(address);
   let uri = contract.try_tokenURI(tokenId);
   let token = getOrCreateToken(getTokenId(address, tokenId));
@@ -150,7 +150,7 @@ export function updateMetadata(address: Address, tokenId: BigInt): void {
     attribute.save();
   }
 
-  // Only way our tokeknURI changes is when our head size increases. So lets remove the old attribute.
+  // Only way our tokenURI changes is when our head size increases. So lets remove the old attribute.
   if (shouldUpdateMetadata(uri, token.metadataUri)) {
     let metadataUri = token.metadataUri;
 
@@ -184,5 +184,5 @@ export function updateMetadata(address: Address, tokenId: BigInt): void {
   token.metadataUri = uri.value;
   token.save();
 
-  addMetadataToToken(token);
+  addMetadataToToken(token, block);
 }

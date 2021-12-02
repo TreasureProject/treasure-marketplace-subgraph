@@ -109,7 +109,7 @@ export function handleItemListed(event: ItemListed): void {
   }
 
   if (status == "Active") {
-    collection.listingIds = collection.listingIds.concat([listing.id]);
+    collection._listingIds = collection._listingIds.concat([listing.id]);
     collection.totalListings = collection.totalListings.plus(ONE_BI);
   }
 

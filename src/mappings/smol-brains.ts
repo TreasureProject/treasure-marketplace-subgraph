@@ -44,7 +44,7 @@ export function handleTransfer(event: Transfer): void {
     let attribute = getOrCreateAttribute(
       getAttributeId(address, "IQ", tokenId.toHexString())
     );
-    
+
     attribute.name = "IQ";
     attribute.percentage = toBigDecimal(0);
     attribute.value = ZERO_BI.toString();
@@ -74,7 +74,7 @@ export function handleDropSchool(event: DropSchool): void {
 
     let collection = getOrCreateCollection(SMOLBRAIN_ADDRESS);
 
-    collection.listingIds = collection.listingIds.concat([listing.id]);
+    collection._listingIds = collection._listingIds.concat([listing.id]);
     collection.save();
 
     updateCollectionFloorAndTotal(collection);
@@ -88,7 +88,7 @@ export function handleDropSchool(event: DropSchool): void {
     userToken.save();
   }
 
-  ERC721.updateMetadata(smolbrains, tokenId);
+  ERC721.updateMetadata(smolbrains, tokenId, event.block.number);
 }
 
 export function handleJoinSchool(event: JoinSchool): void {
