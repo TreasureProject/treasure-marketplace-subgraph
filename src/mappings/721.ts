@@ -1,26 +1,25 @@
-import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
+import { Address, BigInt, store } from "@graphprotocol/graph-ts";
 import { Listing, Metadata } from "../../generated/schema";
 import { SmolBrains } from "../../generated/Smol Brains School/SmolBrains";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
-  ZERO_ADDRESS,
   ZERO_BI,
   addMetadataToToken,
+  getAttributeId,
+  getOrCreateAttribute,
   getOrCreateCollection,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
   getListingId,
   getTokenId,
+  isMint,
   isSafeTransferFrom,
   removeAtIndex,
-  updateCollectionFloorAndTotal,
-  getOrCreateAttribute,
-  getAttributeId,
-  isMint,
-  toBigDecimal,
   shouldUpdateMetadata,
+  toBigDecimal,
+  updateCollectionFloorAndTotal,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {

@@ -11,17 +11,16 @@ import {
   ZERO_BI,
   addMetadataToToken,
   getCreator,
+  getListingId,
   getName,
   getOrCreateCollection,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
-  getListingId,
   getTokenId,
-  isMint,
   isSafeTransferFrom,
-  updateCollectionFloorAndTotal,
   shouldUpdateMetadata,
+  updateCollectionFloorAndTotal,
 } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {

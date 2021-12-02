@@ -2,12 +2,12 @@ import {
   Address,
   BigDecimal,
   BigInt,
-  ipfs,
-  json,
   JSONValue,
   JSONValueKind,
-  log,
   TypedMap,
+  ipfs,
+  json,
+  log,
 } from "@graphprotocol/graph-ts";
 import {
   Attribute,
@@ -23,10 +23,10 @@ import {
 import {
   IPFS_GATEWAY,
   ZERO_BI,
-  removeAtIndex,
   getAttributeId,
-  toBigDecimal,
   getTokenId,
+  removeAtIndex,
+  toBigDecimal,
 } from ".";
 
 class TokenRarity {
