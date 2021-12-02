@@ -3,11 +3,19 @@ import { Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
   SMOLBRAIN_ADDRESS,
+  ZERO_BI,
+  createMetadataAttribute,
+  getAttributeId,
   getCreator,
   getListingId,
+  getOrCreateAttribute,
   getOrCreateCollection,
+  getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
+  getTokenId,
+  isMint,
+  toBigDecimal,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 import {
@@ -25,6 +33,29 @@ export function handleTransfer(event: Transfer): void {
   collection.save();
 
   ERC721.handleTransfer(event);
+
+  // Lets setup our initial IQ
+  let params = event.params;
+  let tokenId = params.tokenId;
+  let address = event.address;
+
+  if (isMint(params.from)) {
+    let token = getOrCreateToken(getTokenId(address, tokenId));
+    let attribute = getOrCreateAttribute(
+      getAttributeId(address, "IQ", tokenId.toHexString())
+    );
+    
+    attribute.name = "IQ";
+    attribute.percentage = toBigDecimal(0);
+    attribute.value = ZERO_BI.toString();
+
+    attribute._tokenIds = [];
+
+    createMetadataAttribute(attribute.id, token.id);
+
+    attribute.save();
+    token.save();
+  }
 }
 
 export function handleDropSchool(event: DropSchool): void {

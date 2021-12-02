@@ -249,6 +249,8 @@ dataSources:
       abis:
         - name: School
           file: ./abis/SmolBrainsSchool.json
+        - name: SmolBrains
+          file: ./abis/SmolBrains.json
         - name: ERC721
           file: ./abis/721.json
       eventHandlers:

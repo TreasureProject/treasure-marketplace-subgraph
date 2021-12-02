@@ -9,9 +9,30 @@ enum TokenStandard {
   ERC1155
 }
 
+type Attribute @entity {
+  id: ID!
+
+  "Internal for tracking tokenIds calculated"
+  _tokenIds: [BigInt!]!
+
+  collection: Collection!
+  metadata: [MetadataAttribute!]! @derivedFrom(field: "attribute")
+  name: String!
+  percentage: BigDecimal!
+  value: String!
+}
+
 type Collection @entity {
   id: ID!
+
+  "Internal for tracking tokenIds minted for a collection"
+  _tokenIds: [BigInt!]!
+
   address: Bytes!
+
+  "Used to determine possible filters for collection"
+  attributes: [Attribute!] @derivedFrom(field: "collection")
+
   creator: Creator!
   floorPrice: BigInt!
   listingIds: [String!]!
@@ -35,6 +56,7 @@ type Creator @entity {
 
 type Listing @entity {
   id: ID!
+
   blockTimestamp: BigInt!
   buyer: User
   collection: Collection!
@@ -43,19 +65,30 @@ type Listing @entity {
   nicePrice: String
   pricePerItem: BigInt!
   quantity: BigInt!
+  seller: User!
   status: Status!
   token: Token!
   tokenName: String
   totalPrice: String
   transactionLink: String
+
+  "deprecated: use seller field"
   user: User!
 }
 
 type Metadata @entity {
   id: ID!
+  attributes: [MetadataAttribute!] @derivedFrom(field: "metadata")
   description: String!
   image: String!
   name: String!
+  token: Token!
+}
+
+type MetadataAttribute @entity {
+  id: ID!
+  attribute: Attribute!
+  metadata: Metadata!
 }
 
 type Student @entity {
@@ -65,11 +98,21 @@ type Student @entity {
 type Token @entity {
   id: ID!
   collection: Collection!
+
+  "Used to support multiple filters with metadata attributes"
+  filters: [String!]!
+
   floorPrice: BigInt
   listings: [Listing!] @derivedFrom(field: "token")
   metadata: Metadata
   metadataUri: String
   name: String
+
+  "Owner of token for ERC721, null for ERC1155"
+  owner: User
+
+  rank: Int
+  rarity: BigDecimal
   tokenId: BigInt!
 }
 

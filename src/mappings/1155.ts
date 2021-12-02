@@ -11,14 +11,15 @@ import {
   ZERO_BI,
   addMetadataToToken,
   getCreator,
+  getListingId,
   getName,
   getOrCreateCollection,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
-  getListingId,
   getTokenId,
   isSafeTransferFrom,
+  shouldUpdateMetadata,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 
@@ -44,8 +45,10 @@ export function handleTransferSingle(event: TransferSingle): void {
   }
 
   token.collection = collection.id;
+  token.name = getName(tokenId);
+  token.tokenId = tokenId;
 
-  if (!uri.reverted) {
+  if (shouldUpdateMetadata(uri, token.metadataUri)) {
     let metadataUri = uri.value.endsWith(".json")
       ? uri.value
       : `${uri.value}${tokenId}.json`;
@@ -62,10 +65,10 @@ export function handleTransferSingle(event: TransferSingle): void {
       "Qmf2a3J62DCA6wWc6pY9xqHWyexqG17srVeAUrXiewSB1Q"
     );
 
-    addMetadataToToken(metadataUri, token.id, tokenId);
-
     token.metadata = token.id;
     token.metadataUri = metadataUri;
+
+    addMetadataToToken(token);
   }
 
   if (STAKING_ADDRESS == to.toHexString()) {
@@ -143,9 +146,6 @@ export function handleTransferSingle(event: TransferSingle): void {
     toUser.save();
     userToken.save();
   }
-
-  token.name = getName(tokenId);
-  token.tokenId = tokenId;
 
   collection.save();
   token.save();

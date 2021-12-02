@@ -1,19 +1,24 @@
-import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
+import { Address, BigInt, store } from "@graphprotocol/graph-ts";
 import { Listing, Metadata } from "../../generated/schema";
+import { SmolBrains } from "../../generated/Smol Brains School/SmolBrains";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
-  ZERO_ADDRESS,
   ZERO_BI,
   addMetadataToToken,
+  getAttributeId,
+  getOrCreateAttribute,
   getOrCreateCollection,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
   getListingId,
   getTokenId,
+  isMint,
   isSafeTransferFrom,
   removeAtIndex,
+  shouldUpdateMetadata,
+  toBigDecimal,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 
@@ -36,19 +41,26 @@ export function handleTransfer(event: Transfer): void {
   collection.standard = "ERC721";
 
   token.collection = collection.id;
+  token.metadata = token.id;
+  token.owner = buyer.id;
+  token.tokenId = tokenId;
 
-  if (!uri.reverted) {
-    token.metadataUri = uri.value;
+  // Mint, lets set some things up
+  if (isMint(from) && !collection._tokenIds.includes(tokenId)) {
+    collection._tokenIds = collection._tokenIds.concat([tokenId]);
+    collection.save();
+  }
 
-    addMetadataToToken(uri.value, token.id, tokenId);
-  } else if (collection.name == "Smol Brains" && tokenId.equals(ZERO_BI)) {
-    // This token was transferred on contract creation so there is no metadataUri yet
-    let metadataUri =
-      "https://treasure-marketplace.mypinata.cloud/ipfs/QmZg7bqH36fnKUcmKDhqGm65j5hbFeDZcogoxxiFMLeybE/0/0";
+  let metadataUri = uri.reverted
+    ? collection.name === "Smol Brains" && tokenId.equals(ZERO_BI)
+      ? "https://treasure-marketplace.mypinata.cloud/ipfs/QmZg7bqH36fnKUcmKDhqGm65j5hbFeDZcogoxxiFMLeybE/0/0"
+      : null
+    : uri.value;
 
-    addMetadataToToken(metadataUri, token.id, tokenId);
-
+  if (metadataUri !== token.metadataUri) {
     token.metadataUri = metadataUri;
+
+    addMetadataToToken(token);
   }
 
   let metadata = Metadata.load(token.id);
@@ -66,11 +78,8 @@ export function handleTransfer(event: Transfer): void {
     ]);
   }
 
-  token.metadata = token.id;
-  token.tokenId = tokenId;
-
   // Not a mint, remove it from the transferrer
-  if (from.toHexString() != ZERO_ADDRESS) {
+  if (!isMint(from)) {
     let seller = getListingId(from, address, tokenId);
     let listing = Listing.load(seller);
 
@@ -101,10 +110,11 @@ export function handleTransfer(event: Transfer): void {
 
     if (!uri.reverted) {
       let metadataTokenId = getTokenId(address, metadataId);
+      let metadataToken = getOrCreateToken(metadataTokenId);
 
-      token.metadataUri = uri.value;
+      metadataToken.metadataUri = uri.value;
 
-      addMetadataToToken(uri.value, metadataTokenId, metadataId);
+      addMetadataToToken(metadataToken);
 
       if (Metadata.load(metadataTokenId)) {
         collection.missingMetadataIds = removeAtIndex(
@@ -112,6 +122,8 @@ export function handleTransfer(event: Transfer): void {
           index
         );
       }
+
+      metadataToken.save();
     }
   }
 
@@ -122,14 +134,55 @@ export function handleTransfer(event: Transfer): void {
 }
 
 export function updateMetadata(address: Address, tokenId: BigInt): void {
-  let contract = ERC721.bind(address);
+  let contract = SmolBrains.bind(address);
   let uri = contract.try_tokenURI(tokenId);
   let token = getOrCreateToken(getTokenId(address, tokenId));
 
-  if (!uri.reverted && token.metadataUri != uri.value) {
-    token.metadataUri = uri.value;
-    token.save();
+  // Snapshot IQ
+  let iq = contract.try_brainz(tokenId);
 
-    addMetadataToToken(uri.value, token.id, tokenId);
+  if (!iq.reverted) {
+    let attribute = getOrCreateAttribute(
+      getAttributeId(address, "IQ", tokenId.toHexString())
+    );
+
+    attribute.value = iq.value.toString();
+    attribute.save();
   }
+
+  // Only way our tokeknURI changes is when our head size increases. So lets remove the old attribute.
+  if (shouldUpdateMetadata(uri, token.metadataUri)) {
+    let metadataUri = token.metadataUri;
+
+    if (metadataUri === null) {
+      return;
+    }
+
+    let head = metadataUri.split("/").reverse()[0];
+    let name = "Head Size";
+    let attribute = getOrCreateAttribute(getAttributeId(address, name, head));
+    let lookup = `${name},${head}`;
+    let filters = token.filters;
+
+    if (attribute._tokenIds.includes(tokenId)) {
+      attribute._tokenIds = removeAtIndex(
+        attribute._tokenIds,
+        attribute._tokenIds.indexOf(tokenId)
+      );
+      attribute.percentage = toBigDecimal(0);
+      attribute.save();
+    }
+
+    if (filters.includes(lookup)) {
+      token.filters = removeAtIndex(filters, filters.indexOf(lookup));
+      token.save();
+    }
+
+    store.remove("MetadataAttribute", `${token.id}-${attribute.id}`);
+  }
+
+  token.metadataUri = uri.value;
+  token.save();
+
+  addMetadataToToken(token);
 }
