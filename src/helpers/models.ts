@@ -147,8 +147,17 @@ export function getOrCreateUserToken(id: string): UserToken {
   return userToken;
 }
 
-export function addMetadataToToken(metadataUri: string, token: Token): void {
-  if (!metadataUri.startsWith("https://")) {
+function getString(value: JSONValue | null): string {
+  return value ? value.toString() : "";
+}
+
+export function addMetadataToToken(token: Token): void {
+  let metadataUri = token.metadataUri;
+
+  if (
+    metadataUri === null ||
+    (metadataUri && !metadataUri.startsWith("https://"))
+  ) {
     return;
   }
 
@@ -170,10 +179,6 @@ export function addMetadataToToken(metadataUri: string, token: Token): void {
 
   let collection = Collection.load(token.collection);
   let collectionAddress = Address.fromString(token.collection);
-
-  function getString(value: JSONValue | null): string {
-    return value ? value.toString() : "";
-  }
 
   // This is because the Extra Life metadata is an array of a single object.
   // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
@@ -201,7 +206,7 @@ export function addMetadataToToken(metadataUri: string, token: Token): void {
   // Attributes
   let attributes = object.get("attributes");
 
-  if (!attributes || (attributes && attributes.kind !== JSONValueKind.ARRAY)) {
+  if (!attributes || attributes.kind !== JSONValueKind.ARRAY) {
     return;
   }
 

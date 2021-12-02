@@ -18,8 +18,10 @@ import {
   getOrCreateUserToken,
   getListingId,
   getTokenId,
+  isMint,
   isSafeTransferFrom,
   updateCollectionFloorAndTotal,
+  shouldUpdateMetadata,
 } from "../helpers";
 
 export function handleTransferSingle(event: TransferSingle): void {
@@ -47,7 +49,7 @@ export function handleTransferSingle(event: TransferSingle): void {
   token.name = getName(tokenId);
   token.tokenId = tokenId;
 
-  if (!uri.reverted) {
+  if (shouldUpdateMetadata(uri, token.metadataUri)) {
     let metadataUri = uri.value.endsWith(".json")
       ? uri.value
       : `${uri.value}${tokenId}.json`;
@@ -64,10 +66,10 @@ export function handleTransferSingle(event: TransferSingle): void {
       "Qmf2a3J62DCA6wWc6pY9xqHWyexqG17srVeAUrXiewSB1Q"
     );
 
-    addMetadataToToken(metadataUri, token);
-
     token.metadata = token.id;
     token.metadataUri = metadataUri;
+
+    addMetadataToToken(token);
   }
 
   if (STAKING_ADDRESS == to.toHexString()) {
