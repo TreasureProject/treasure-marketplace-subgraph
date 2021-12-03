@@ -57,13 +57,13 @@ export function handleTransfer(event: Transfer): void {
         : null
       : uri.value;
 
-    // if (metadataUri !== token.metadataUri) {
     token.metadata = token.id;
     token.metadataUri = metadataUri;
+
+    collection.save();
     token.save();
 
     addMetadataToToken(token, event.block.number);
-    // }
   }
 
   let metadata = Metadata.load(token.id);
@@ -139,12 +139,13 @@ export function updateMetadata(
     }
 
     let head = metadataUri.split("/").reverse()[0];
-    let size = BigInt.fromString(iqAttribute.value)
+    let calculated = BigInt.fromString(iqAttribute.value)
       .div(BigInt.fromI32(50))
-      .toString()
-      .slice(0, 1);
+      .toString();
+    let size =
+      calculated.length < 18 ? "" : calculated.slice(0, calculated.length - 18);
 
-    if (head === size) {
+    if (head == size || !size) {
       return;
     }
 
@@ -160,7 +161,7 @@ export function updateMetadata(
 
     let updated = uri.value.split("/").reverse()[0];
 
-    if (updated !== size) {
+    if (updated != size) {
       log.info("headSizeMismatch token: {}, uri: {}, calculated: {}", [
         tokenId.toString(),
         updated,
@@ -182,11 +183,12 @@ export function updateMetadata(
     );
     let lookup = `${name},${head}`;
     let filters = token.filters;
+    let tokenIds = headSizeAttribute._tokenIds;
 
-    if (headSizeAttribute._tokenIds.includes(tokenId)) {
+    if (tokenIds.includes(tokenId)) {
       headSizeAttribute._tokenIds = removeAtIndex(
-        headSizeAttribute._tokenIds,
-        headSizeAttribute._tokenIds.indexOf(tokenId)
+        tokenIds,
+        tokenIds.indexOf(tokenId)
       );
       headSizeAttribute.percentage = toBigDecimal(0);
       headSizeAttribute.save();
@@ -197,7 +199,7 @@ export function updateMetadata(
       token.save();
     }
 
-    store.remove("MetadataAttribute", `${token.id}-${iqAttribute.id}`);
+    store.remove("MetadataAttribute", `${token.id}-${headSizeAttribute.id}`);
 
     token.metadataUri = uri.value;
     token.save();

@@ -68,6 +68,8 @@ export function handleTransferSingle(event: TransferSingle): void {
 
     token.metadata = token.id;
     token.metadataUri = metadataUri;
+
+    collection.save();
     token.save();
 
     addMetadataToToken(token, ZERO_BI);
