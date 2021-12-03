@@ -122,88 +122,92 @@ export function updateMetadata(
   // Snapshot IQ
   let iq = contract.try_brainz(tokenId);
 
-  if (!iq.reverted) {
-    let iqAttribute = getOrCreateAttribute(
-      getAttributeId(address, "IQ", tokenId.toHexString())
-    );
+  if (iq.reverted) {
+    log.info("iqReverted token: {}", [tokenId.toString()]);
 
-    iqAttribute.value = iq.value.toString();
-    iqAttribute.save();
+    return;
+  }
 
-    // Did our brain grow?
-    let token = getOrCreateToken(getTokenId(address, tokenId));
-    let metadataUri = token.metadataUri;
+  let iqAttribute = getOrCreateAttribute(
+    getAttributeId(address, "IQ", tokenId.toHexString())
+  );
 
-    if (metadataUri === null) {
-      return;
-    }
+  iqAttribute.value = iq.value.toString();
+  iqAttribute.save();
 
-    let head = metadataUri.split("/").reverse()[0];
-    let calculated = BigInt.fromString(iqAttribute.value)
-      .div(BigInt.fromI32(50))
-      .toString();
-    let size =
-      calculated.length < 18 ? "" : calculated.slice(0, calculated.length - 18);
+  // Did our brain grow?
+  let token = getOrCreateToken(getTokenId(address, tokenId));
+  let metadataUri = token.metadataUri;
 
-    if (head == size || !size) {
-      return;
-    }
+  if (metadataUri === null) {
+    return;
+  }
 
-    let uri = contract.try_tokenURI(tokenId);
+  let head = metadataUri.split("/").reverse()[0];
+  let calculated = BigInt.fromString(iqAttribute.value)
+    .div(BigInt.fromI32(50))
+    .toString();
+  let size =
+    calculated.length < 18 ? "" : calculated.slice(0, calculated.length - 18);
 
-    if (uri.reverted) {
-      log.info("uriReverted fetching new head size, token: {}", [
-        tokenId.toString(),
-      ]);
+  if (head == size || !size) {
+    return;
+  }
 
-      return;
-    }
+  let uri = contract.try_tokenURI(tokenId);
 
-    let updated = uri.value.split("/").reverse()[0];
-
-    if (updated != size) {
-      log.info("headSizeMismatch token: {}, uri: {}, calculated: {}", [
-        tokenId.toString(),
-        updated,
-        size,
-      ]);
-
-      return;
-    }
-
-    log.info("updateHeadSize token: {}, from: {}, to: {}", [
+  if (uri.reverted) {
+    log.info("uriReverted fetching new head size, token: {}", [
       tokenId.toString(),
-      head,
+    ]);
+
+    return;
+  }
+
+  let updated = uri.value.split("/").reverse()[0];
+
+  if (updated != size) {
+    log.info("headSizeMismatch token: {}, uri: {}, calculated: {}", [
+      tokenId.toString(),
+      updated,
       size,
     ]);
 
-    let name = "Head Size";
-    let headSizeAttribute = getOrCreateAttribute(
-      getAttributeId(address, name, head)
-    );
-    let lookup = `${name},${head}`;
-    let filters = token.filters;
-    let tokenIds = headSizeAttribute._tokenIds;
-
-    if (tokenIds.includes(tokenId)) {
-      headSizeAttribute._tokenIds = removeAtIndex(
-        tokenIds,
-        tokenIds.indexOf(tokenId)
-      );
-      headSizeAttribute.percentage = toBigDecimal(0);
-      headSizeAttribute.save();
-    }
-
-    if (filters.includes(lookup)) {
-      token.filters = removeAtIndex(filters, filters.indexOf(lookup));
-      token.save();
-    }
-
-    store.remove("MetadataAttribute", `${token.id}-${headSizeAttribute.id}`);
-
-    token.metadataUri = uri.value;
-    token.save();
-
-    addMetadataToToken(token, block);
+    return;
   }
+
+  log.info("updateHeadSize token: {}, from: {}, to: {}", [
+    tokenId.toString(),
+    head,
+    size,
+  ]);
+
+  let name = "Head Size";
+  let headSizeAttribute = getOrCreateAttribute(
+    getAttributeId(address, name, head)
+  );
+  let lookup = `${name},${head}`;
+  let filters = token.filters;
+  let tokenIds = headSizeAttribute._tokenIds;
+
+  if (tokenIds.includes(tokenId)) {
+    headSizeAttribute._tokenIds = removeAtIndex(
+      tokenIds,
+      tokenIds.indexOf(tokenId)
+    );
+    headSizeAttribute.percentage = toBigDecimal(0);
+    headSizeAttribute.save();
+  }
+
+  if (filters.includes(lookup)) {
+    token.filters = removeAtIndex(filters, filters.indexOf(lookup));
+    token.save();
+  }
+
+  store.remove("MetadataAttribute", `${token.id}-${headSizeAttribute.id}`);
+
+  token.metadataUri = uri.value;
+  token.save();
+
+  addMetadataToToken(token, block);
 }
