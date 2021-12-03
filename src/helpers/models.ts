@@ -29,6 +29,8 @@ import {
   removeAtIndex,
   toBigDecimal,
 } from ".";
+import { ERC1155 } from "../../generated/TreasureMarketplace/ERC1155";
+import { ERC721 } from "../../generated/TreasureMarketplace/ERC721";
 
 class TokenRarity {
   token: Token;
@@ -75,7 +77,7 @@ export function getOrCreateCollection(id: string): Collection {
     collection.floorPrice = ZERO_BI;
     collection.totalListings = ZERO_BI;
     collection.totalSales = ZERO_BI;
-    
+
     collection.save();
   }
 
@@ -167,7 +169,9 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
   let bytes = ipfs.cat(metadataUri.replace(IPFS_GATEWAY, ""));
 
   if (bytes === null) {
-    log.info("[IPFS] Null bytes for token {}", [token.tokenId.toString()]);
+    log.info("addMetadataToToken null bytes for token {}", [
+      token.tokenId.toString(),
+    ]);
 
     return;
   }
@@ -175,7 +179,9 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
   let obj = json.fromBytes(bytes);
 
   if (obj === null) {
-    log.info("[JSON] Null bytes for token {}", [token.tokenId.toString()]);
+    log.info("addMetadataToToken null json fromBytes for token {}", [
+      token.tokenId.toString(),
+    ]);
 
     return;
   }
@@ -204,12 +210,12 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
   metadata.name = name;
   metadata.token = token.id;
 
-  metadata.save();
-
   // Attributes
   let attributes = object.get("attributes");
 
   if (!attributes || attributes.kind !== JSONValueKind.ARRAY) {
+    metadata.save();
+
     return;
   }
 
@@ -262,8 +268,10 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     }
   }
 
+  metadata.save();
+
   if (block.lt(RARITY_CALCULATION_BLOCK)) {
-    return
+    return;
   }
 
   let ids = collection._tokenIds;
@@ -316,6 +324,41 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
 
     _token.rank = index + 1;
     _token.save();
+  }
+}
+
+export function checkMissingMetadata(
+  collection: Collection,
+  block: BigInt
+): void {
+  // Try fetching missing metadata
+  let metadataIds = collection._missingMetadataIds;
+  let address = collection.address;
+
+  for (let index = 0; index < metadataIds.length; index++) {
+    let metadataId = metadataIds[index];
+    let uri =
+      collection.standard == "ERC721"
+        ? ERC721.bind(address).try_tokenURI(metadataId)
+        : ERC1155.bind(address).try_uri(metadataId);
+
+    if (!uri.reverted) {
+      let metadataTokenId = getTokenId(address, metadataId);
+      let metadataToken = getOrCreateToken(metadataTokenId);
+
+      metadataToken.metadataUri = uri.value;
+
+      addMetadataToToken(metadataToken, block);
+
+      if (Metadata.load(metadataTokenId)) {
+        collection._missingMetadataIds = removeAtIndex(
+          collection._missingMetadataIds,
+          index
+        );
+      }
+
+      metadataToken.save();
+    }
   }
 }
 
