@@ -1,5 +1,5 @@
 import { log, store } from "@graphprotocol/graph-ts";
-import { Listing } from "../../generated/schema";
+import { Listing, Metadata } from "../../generated/schema";
 import {
   ERC1155,
   TransferBatch,
@@ -10,6 +10,7 @@ import {
   STAKING_ADDRESS,
   ZERO_BI,
   addMetadataToToken,
+  checkMissingMetadata,
   getCreator,
   getListingId,
   getName,
@@ -18,8 +19,8 @@ import {
   getOrCreateUser,
   getOrCreateUserToken,
   getTokenId,
+  isMint,
   isSafeTransferFrom,
-  shouldUpdateMetadata,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 
@@ -34,9 +35,6 @@ export function handleTransferSingle(event: TransferSingle): void {
   let collection = getOrCreateCollection(address.toHexString());
   let token = getOrCreateToken(getTokenId(address, tokenId));
 
-  let contract = ERC1155.bind(address);
-  let uri = contract.try_uri(tokenId);
-
   collection.address = address;
   collection.standard = "ERC1155";
 
@@ -48,7 +46,10 @@ export function handleTransferSingle(event: TransferSingle): void {
   token.name = getName(tokenId);
   token.tokenId = tokenId;
 
-  if (shouldUpdateMetadata(uri, token.metadataUri)) {
+  if (isMint(from)) {
+    let contract = ERC1155.bind(address);
+    let uri = contract.try_uri(tokenId);
+
     let metadataUri = uri.value.endsWith(".json")
       ? uri.value
       : `${uri.value}${tokenId}.json`;
@@ -68,7 +69,19 @@ export function handleTransferSingle(event: TransferSingle): void {
     token.metadata = token.id;
     token.metadataUri = metadataUri;
 
+    collection.save();
+    token.save();
+
     addMetadataToToken(token, ZERO_BI);
+  }
+
+  let metadata = Metadata.load(token.id);
+
+  // Add missing metadata id to be tried again
+  if (!metadata) {
+    collection._missingMetadataIds = collection._missingMetadataIds.concat([
+      tokenId,
+    ]);
   }
 
   if (STAKING_ADDRESS == to.toHexString()) {
@@ -146,6 +159,8 @@ export function handleTransferSingle(event: TransferSingle): void {
     toUser.save();
     userToken.save();
   }
+
+  checkMissingMetadata(collection, event.block.number);
 
   collection.save();
   token.save();
