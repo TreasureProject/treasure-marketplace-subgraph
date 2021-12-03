@@ -333,7 +333,7 @@ export function checkMissingMetadata(
 ): void {
   // Try fetching missing metadata
   let metadataIds = collection._missingMetadataIds;
-  let address = collection.address;
+  let address = Address.fromString(collection.address.toHexString());
 
   for (let index = 0; index < metadataIds.length; index++) {
     let metadataId = metadataIds[index];
