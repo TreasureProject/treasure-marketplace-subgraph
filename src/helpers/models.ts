@@ -276,13 +276,13 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     return;
   }
 
-  log.info("rarityCalculation block: {}, collection: {}", [
+  log.info("rarityCalculationStart block: {}, collection: {}", [
     block.toString(),
     collection.name,
   ]);
 
   let ids = collection._tokenIds;
-  let tokens =  new Array<TokenRarity>(ids.length);
+  let tokens = new Array<TokenRarity>(ids.length);
 
   for (let index = 0; index < ids.length; index++) {
     let id = ids[index];
@@ -293,7 +293,7 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     };
   }
 
-  log.info("rarityCalculation rarity set to 0; block: {}, collection: {}", [
+  log.info("rarityCalculationRaritySetTo 0; block: {}, collection: {}", [
     block.toString(),
     collection.name,
   ]);
@@ -317,7 +317,7 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
       let total = collection._tokenIds.length;
 
       log.info(
-        "rarityCalculation block: {}, collection: {}, trait: {}, value: {}, count: {}, total: {}",
+        "rarityCalculationAttribute block: {}, collection: {}, trait: {}, value: {}, count: {}, total: {}",
         [
           block.toString(),
           collection.name,
@@ -341,14 +341,14 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     _token.rarity = tokens[index].rarity = rarity;
   }
 
-  log.info("rarityCalculation block: {}, collection: {}", [
+  log.info("rarityCalculationDone block: {}, collection: {}", [
     block.toString(),
     collection.name,
   ]);
 
   tokens.sort((left, right) => (right.rarity.gt(left.rarity) ? 1 : -1));
 
-  log.info("rarityCalculation tokens sorted block: {}, collection: {}", [
+  log.info("rarityCalculationTokensSorted block: {}, collection: {}", [
     block.toString(),
     collection.name,
   ]);
@@ -357,7 +357,7 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     let _token = tokens[index].token;
 
     log.info(
-      "rarityCalculation set rank block: {}, collection: {}, token: {}",
+      "rarityCalculationSetRank block: {}, collection: {}, token: {}",
       [block.toString(), collection.name, _token.tokenId.toString()]
     );
 
@@ -365,7 +365,7 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     _token.save();
   }
 
-  log.info("rarityCalculation ranks complete block: {}, collection: {}", [
+  log.info("rarityCalculationRanksComplete block: {}, collection: {}", [
     block.toString(),
     collection.name,
   ]);
