@@ -8,6 +8,7 @@ import {
   ipfs,
   json,
   log,
+  store,
 } from "@graphprotocol/graph-ts";
 import {
   Attribute,
@@ -27,6 +28,7 @@ import {
   getAttributeId,
   getTokenId,
   removeAtIndex,
+  removeFromArray,
   toBigDecimal,
 } from ".";
 import { ERC1155 } from "../../generated/TreasureMarketplace/ERC1155";
@@ -72,6 +74,7 @@ export function getOrCreateCollection(id: string): Collection {
   if (!collection) {
     collection = new Collection(id);
 
+    collection._attributeIds = [];
     collection._listingIds = [];
     collection._missingMetadataIds = [];
     collection._tokenIds = [];
@@ -158,7 +161,12 @@ function getString(value: JSONValue | null): string {
   return value ? value.toString() : "";
 }
 
-export function addMetadataToToken(token: Token, block: BigInt): void {
+export function addMetadataToToken(
+  token: Token,
+  block: BigInt,
+  collection: Collection,
+  skip: boolean = false
+): void {
   let metadataUri = token.metadataUri;
 
   if (
@@ -188,7 +196,6 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     return;
   }
 
-  let collection = Collection.load(token.collection);
   let collectionAddress = Address.fromString(token.collection);
 
   // This is because the Extra Life metadata is an array of a single object.
@@ -221,11 +228,6 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     return;
   }
 
-  // Will never happen, but helps AssemblyScript types
-  if (!collection) {
-    return;
-  }
-
   let items = attributes.toArray();
 
   for (let index = 0; index < items.length; index++) {
@@ -252,9 +254,89 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
     attribute.name = type;
     attribute.value = value;
 
-    if (!attribute._tokenIds.includes(token.tokenId)) {
-      attribute._tokenIds = attribute._tokenIds.concat([token.tokenId]);
+    if (!collection._attributeIds.includes(attribute.id)) {
+      collection._attributeIds = collection._attributeIds.concat([
+        attribute.id,
+      ]);
+      collection.save();
+    }
+
+    if (!attribute._tokenIds.includes(token.tokenId.toString())) {
+      attribute._tokenIds = attribute._tokenIds.concat([
+        token.tokenId.toString(),
+      ]);
       attribute.percentage = toBigDecimal(0);
+    }
+
+    // Remove previous head size
+    if (type == "Head Size" && value != "0") {
+      log.info("removeHeadSize  token: {}, size: {}", [
+        token.tokenId.toString(),
+        value.toString(),
+      ]);
+
+      let previousValue = "0";
+      let filters = token.filters;
+
+      for (let _index = 0; _index < filters.length; _index++) {
+        let parts = filters[_index].split(",");
+
+        if (parts[0] != "Head Size") {
+          continue;
+        }
+
+        previousValue = parts[1];
+
+        log.info("foundPreviousHeadSize token: {}, value: {}", [
+          token.tokenId.toString(),
+          previousValue,
+        ]);
+      }
+
+      let id = getAttributeId(collectionAddress, type, previousValue);
+      let previousHeadSize = Attribute.load(id);
+
+      if (!previousHeadSize) {
+        log.info("notPreviousHeadSize type: {}, previousValue: {}, id: {}", [
+          type,
+          previousValue,
+          id,
+        ]);
+
+        return;
+      }
+
+      log.info("previousHeadSize id: {}, name: {}, value: {}", [
+        previousHeadSize.id,
+        previousHeadSize.name,
+        previousHeadSize.value,
+      ]);
+
+      previousHeadSize._tokenIds = removeFromArray(
+        previousHeadSize._tokenIds,
+        token.tokenId.toString()
+      );
+
+      previousHeadSize.percentage = toBigDecimal(
+        previousHeadSize._tokenIds.length
+      ).div(toBigDecimal(collection._tokenIds.length));
+
+      previousHeadSize.save();
+
+      token.filters = removeFromArray(
+        token.filters,
+        `${type},${previousValue}`
+      );
+      token.save();
+
+      store.remove(
+        "MetadataAttribute",
+        [metadata.id, previousHeadSize.id].join("-")
+      );
+
+      log.info("removedMetadataAttribute id: {}", [
+        [metadata.id, previousHeadSize.id].join("-"),
+      ]);
     }
 
     createMetadataAttribute(attribute.id, metadata.id);
@@ -272,35 +354,76 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
 
   metadata.save();
 
+  let ids = collection._tokenIds;
+  let attributeIds = collection._attributeIds;
+  let total = ids.length;
+  let rarities = new Array<TokenRarity>();
+
+  // Loop through attributes and calculate percentage
+  for (let index = 0; index < attributeIds.length; index++) {
+    let id = attributeIds[index];
+
+    if (id.includes("iq")) {
+      log.info("skipPercentage id: {}", [id]);
+
+      continue;
+    }
+
+    let attribute = Attribute.load(id);
+
+    if (!attribute) {
+      log.info("percentageNoAttribute id: {}, index: {}, token: {}", [
+        id,
+        index.toString(),
+        token.tokenId.toString(),
+      ]);
+
+      return;
+    }
+
+    let count = attribute._tokenIds.length;
+
+    attribute.percentage = toBigDecimal(count).div(toBigDecimal(total));
+    attribute.save();
+  }
+
+  if (skip) {
+    log.info("skipRarityCalc collection: {}, tokenId: {}", [
+      collection.name,
+      token.tokenId.toString(),
+    ]);
+
+    return;
+  }
+
   if (block.lt(RARITY_CALCULATION_BLOCK)) {
     return;
   }
 
-  log.info("rarityCalculationStart block: {}, collection: {}", [
-    block.toString(),
-    collection.name,
+  log.info("rarityCalculationStart tokens: {}, trigger: {}", [
+    total.toString(),
+    token.tokenId.toString(),
   ]);
 
-  let ids = collection._tokenIds;
-  let tokens = new Array<TokenRarity>(ids.length);
+  // Setup rarity array
+  for (let index = 0; index < ids.length - 1; index++) {
+    let id = BigInt.fromString(ids[index]);
 
-  for (let index = 0; index < ids.length; index++) {
-    let id = ids[index];
-
-    tokens[index] = {
+    rarities[index] = {
       token: getOrCreateToken(getTokenId(collectionAddress, id)),
       rarity: toBigDecimal(0),
     };
   }
 
-  log.info("rarityCalculationRaritySetTo 0; block: {}, collection: {}", [
-    block.toString(),
-    collection.name,
-  ]);
+  // Add current token to the end of rarities array
+  rarities.push({
+    token,
+    rarity: toBigDecimal(0),
+  });
 
-  for (let index = 0; index < tokens.length; index++) {
-    let _token = tokens[index].token;
-
+  // Loop through tokens and calculate rarity based on attributes
+  for (let index = 0; index < rarities.length; index++) {
+    let _token = rarities[index].token;
     let filters = _token.filters;
     let rarity = toBigDecimal(0);
 
@@ -309,65 +432,47 @@ export function addMetadataToToken(token: Token, block: BigInt): void {
       let split = filter.split(",");
       let trait = split[0];
       let value = split[1];
-      let attribute = getOrCreateAttribute(
+
+      // Don't include IQ or Head Size in rarity calculation
+      if (["IQ", "Head Size"].includes(trait)) {
+        continue;
+      }
+
+      let attribute = Attribute.load(
         getAttributeId(collectionAddress, trait, value)
       );
 
-      let count = attribute._tokenIds.length;
-      let total = collection._tokenIds.length;
-
-      log.info(
-        "rarityCalculationAttribute block: {}, collection: {}, trait: {}, value: {}, count: {}, total: {}",
-        [
-          block.toString(),
-          collection.name,
-          trait,
-          value,
-          count.toString(),
-          total.toString(),
-        ]
-      );
-
-      attribute.percentage = toBigDecimal(count).div(toBigDecimal(total));
-
-      // Don't include IQ or Head Size in rarity calculation
-      if (!["IQ", "Head Size"].includes(trait)) {
-        rarity = rarity.plus(toBigDecimal(1).div(attribute.percentage));
+      // Shouldn't happen, but just in case
+      if (!attribute) {
+        continue;
       }
 
-      attribute.save();
+      let percentage = attribute.percentage;
+
+      // Shouldn't be hit as we exclude IQ already, but makes AS happy
+      if (!percentage) {
+        continue;
+      }
+
+      rarity = rarity.plus(toBigDecimal(1).div(percentage));
     }
 
-    _token.rarity = tokens[index].rarity = rarity;
+    rarities[index].rarity = rarity;
   }
 
-  log.info("rarityCalculationDone block: {}, collection: {}", [
-    block.toString(),
-    collection.name,
-  ]);
+  rarities.sort((left, right) => (right.rarity.gt(left.rarity) ? 1 : -1));
 
-  tokens.sort((left, right) => (right.rarity.gt(left.rarity) ? 1 : -1));
+  for (let index = 0; index < rarities.length; index++) {
+    let item = rarities[index];
+    let _token = item.token;
 
-  log.info("rarityCalculationTokensSorted block: {}, collection: {}", [
-    block.toString(),
-    collection.name,
-  ]);
-
-  for (let index = 0; index < tokens.length; index++) {
-    let _token = tokens[index].token;
-
-    log.info(
-      "rarityCalculationSetRank block: {}, collection: {}, token: {}",
-      [block.toString(), collection.name, _token.tokenId.toString()]
-    );
-
+    _token.rarity = item.rarity;
     _token.rank = index + 1;
     _token.save();
   }
 
-  log.info("rarityCalculationRanksComplete block: {}, collection: {}", [
-    block.toString(),
-    collection.name,
+  log.info("rarityCalculationRanksComplete tokenId: {}", [
+    token.tokenId.toString(),
   ]);
 }
 
@@ -380,11 +485,16 @@ export function checkMissingMetadata(
   let address = Address.fromString(collection.address.toHexString());
 
   for (let index = 0; index < metadataIds.length; index++) {
-    let metadataId = metadataIds[index];
+    let metadataId = BigInt.fromString(metadataIds[index]);
     let uri =
       collection.standard == "ERC721"
         ? ERC721.bind(address).try_tokenURI(metadataId)
         : ERC1155.bind(address).try_uri(metadataId);
+
+    log.info("missingMetadataIds collection: {}, ids: {}", [
+      collection.name.toString(),
+      metadataId.toString(),
+    ]);
 
     if (!uri.reverted) {
       let metadataTokenId = getTokenId(address, metadataId);
@@ -392,7 +502,7 @@ export function checkMissingMetadata(
 
       metadataToken.metadataUri = uri.value;
 
-      addMetadataToToken(metadataToken, block);
+      addMetadataToToken(metadataToken, block, collection);
 
       if (Metadata.load(metadataTokenId)) {
         collection._missingMetadataIds = removeAtIndex(

@@ -72,15 +72,18 @@ export function handleTransferSingle(event: TransferSingle): void {
     collection.save();
     token.save();
 
-    addMetadataToToken(token, ZERO_BI);
+    addMetadataToToken(token, ZERO_BI, collection);
   }
 
   let metadata = Metadata.load(token.id);
 
   // Add missing metadata id to be tried again
-  if (!metadata) {
+  if (
+    !metadata &&
+    !collection._missingMetadataIds.includes(tokenId.toString())
+  ) {
     collection._missingMetadataIds = collection._missingMetadataIds.concat([
-      tokenId,
+      tokenId.toString(),
     ]);
   }
 

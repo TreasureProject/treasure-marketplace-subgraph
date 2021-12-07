@@ -13,26 +13,29 @@ type Attribute @entity {
   id: ID!
 
   "Internal for tracking tokenIds calculated"
-  _tokenIds: [BigInt!]!
+  _tokenIds: [String!]!
 
   collection: Collection!
   metadata: [MetadataAttribute!]! @derivedFrom(field: "attribute")
   name: String!
-  percentage: BigDecimal!
+  percentage: BigDecimal
   value: String!
 }
 
 type Collection @entity {
   id: ID!
 
+  "Internal for tracking attributes for a collection"
+  _attributeIds: [String!]!
+
   "Internal for tracking listings"
   _listingIds: [String!]!
   
   "Internal for tracking metadata failures to retry"
-  _missingMetadataIds: [BigInt!]!
+  _missingMetadataIds: [String!]!
   
   "Internal for tracking tokenIds minted for a collection"
-  _tokenIds: [BigInt!]!
+  _tokenIds: [String!]!
 
   address: Bytes!
 
@@ -114,6 +117,9 @@ type Token @entity {
 
   "Owner of token for ERC721, null for ERC1155"
   owner: User
+
+  "Owners of token for ERC1155"
+  owners: [UserToken!] @derivedFrom(field: "token")
 
   rank: Int
   rarity: BigDecimal

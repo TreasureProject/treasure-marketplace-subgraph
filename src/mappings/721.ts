@@ -1,5 +1,5 @@
 import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
-import { Listing, Metadata } from "../../generated/schema";
+import { Listing, Metadata, MetadataAttribute } from "../../generated/schema";
 import { SmolBrains } from "../../generated/Smol Brains School/SmolBrains";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
@@ -17,8 +17,6 @@ import {
   getTokenId,
   isMint,
   isSafeTransferFrom,
-  removeAtIndex,
-  toBigDecimal,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 
@@ -41,13 +39,9 @@ export function handleTransfer(event: Transfer): void {
   token.owner = buyer.id;
   token.tokenId = tokenId;
 
-  // Mint, lets set some things up
-  if (isMint(from) && !collection._tokenIds.includes(tokenId)) {
-    collection._tokenIds = collection._tokenIds.concat([tokenId]);
-    collection.save();
-  }
-
   if (isMint(from)) {
+    collection._tokenIds = collection._tokenIds.concat([tokenId.toString()]);
+
     let contract = ERC721.bind(address);
     let uri = contract.try_tokenURI(tokenId);
 
@@ -63,7 +57,7 @@ export function handleTransfer(event: Transfer): void {
     collection.save();
     token.save();
 
-    addMetadataToToken(token, event.block.number);
+    addMetadataToToken(token, event.block.number, collection);
   }
 
   let metadata = Metadata.load(token.id);
@@ -75,9 +69,12 @@ export function handleTransfer(event: Transfer): void {
   }
 
   // Add missing metadata id to be tried again
-  if (!metadata) {
+  if (
+    !metadata &&
+    !collection._missingMetadataIds.includes(tokenId.toString())
+  ) {
     collection._missingMetadataIds = collection._missingMetadataIds.concat([
-      tokenId,
+      tokenId.toString(),
     ]);
   }
 
@@ -176,38 +173,36 @@ export function updateMetadata(
     return;
   }
 
-  log.info("updateHeadSize token: {}, from: {}, to: {}", [
+  log.info("updateHeadSize token: {}, from: {}, to: {}, update: {}", [
     tokenId.toString(),
     head,
     size,
+    updated,
   ]);
-
-  let name = "Head Size";
-  let headSizeAttribute = getOrCreateAttribute(
-    getAttributeId(address, name, head)
-  );
-  let lookup = `${name},${head}`;
-  let filters = token.filters;
-  let tokenIds = headSizeAttribute._tokenIds;
-
-  if (tokenIds.includes(tokenId)) {
-    headSizeAttribute._tokenIds = removeAtIndex(
-      tokenIds,
-      tokenIds.indexOf(tokenId)
-    );
-    headSizeAttribute.percentage = toBigDecimal(0);
-    headSizeAttribute.save();
-  }
-
-  if (filters.includes(lookup)) {
-    token.filters = removeAtIndex(filters, filters.indexOf(lookup));
-    token.save();
-  }
-
-  store.remove("MetadataAttribute", `${token.id}-${headSizeAttribute.id}`);
 
   token.metadataUri = uri.value;
   token.save();
 
-  addMetadataToToken(token, block);
+  let collection = getOrCreateCollection(address.toHexString());
+
+  addMetadataToToken(token, block, collection, true);
+
+  if (
+    !MetadataAttribute.load(
+      [token.id, getAttributeId(address, "Head Size", updated)].join("-")
+    )
+  ) {
+    log.info("headSizeFailed token: {}", [token.tokenId.toString()]);
+
+    let missingIds = collection._missingMetadataIds;
+
+    if (!missingIds.includes(token.tokenId.toString())) {
+      collection._missingMetadataIds = missingIds.concat([
+        token.tokenId.toString(),
+      ]);
+      collection.save();
+    }
+
+    return;
+  }
 }
