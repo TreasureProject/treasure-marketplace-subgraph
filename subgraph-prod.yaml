@@ -280,3 +280,26 @@ dataSources:
         - event: JoinSchool(uint256)
           handler: handleJoinSchool
       file: ./src/mappings/smol-brains.ts
+  - name: Smol Cars
+    kind: ethereum/contract
+    network: arbitrum-one
+    source:
+      address: "0xB16966daD2B5a5282b99846B23dcDF8C47b6132C"
+      abi: SmolCars
+      startBlock: 3661786
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+        - SmolCarMint
+      abis:
+        - name: SmolCars
+          file: ./abis/SmolCars.json
+      eventHandlers:
+        - event: SmolCarMint(indexed address,uint256,string)
+          handler: handleMint
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/mappings/smol-cars.ts
