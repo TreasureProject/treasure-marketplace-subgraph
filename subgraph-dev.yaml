@@ -259,3 +259,26 @@ dataSources:
         - event: JoinSchool(uint256)
           handler: handleJoinSchool
       file: ./src/mappings/smol-brains.ts
+  - name: Smol Cars
+    kind: ethereum/contract
+    network: rinkeby
+    source:
+      address: "0x16BDf0B2D8Bb8E98AeCB32e004feBf9653DA5f43"
+      abi: SmolCars
+      startBlock: 9775903
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+        - SmolCarMint
+      abis:
+        - name: SmolCars
+          file: ./abis/SmolCars.json
+      eventHandlers:
+        - event: SmolCarMint(indexed address,uint256,string)
+          handler: handleMint
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/mappings/smol-cars.ts
