@@ -363,7 +363,7 @@ export function addMetadataToToken(
   for (let index = 0; index < attributeIds.length; index++) {
     let id = attributeIds[index];
 
-    if (id.includes("iq")) {
+    if (id.includes("-iq") || id.includes("-plates")) {
       log.info("skipPercentage id: {}", [id]);
 
       continue;
@@ -500,7 +500,11 @@ export function checkMissingMetadata(
       let metadataTokenId = getTokenId(address, metadataId);
       let metadataToken = getOrCreateToken(metadataTokenId);
 
-      metadataToken.metadataUri = uri.value;
+      // For smol bodies
+      metadataToken.metadataUri = uri.value.replace(
+        "QmSn56t6vRtWxCcc8jqS6YtzdjfR564GFTvehGek6eKLmX",
+        "Qmbt6W9QB74VZzJfWbqG7vi2hiE2K4AnoyvWGFDHEjgoqN"
+      );
 
       addMetadataToToken(metadataToken, block, collection);
 

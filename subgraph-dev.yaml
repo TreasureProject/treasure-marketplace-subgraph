@@ -282,3 +282,54 @@ dataSources:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
       file: ./src/mappings/smol-cars.ts
+  - name: Smol Bodies
+    kind: ethereum/contract
+    network: rinkeby
+    source:
+      address: "0x9e638BFe78B372b8f5CC63Cf6b01B90F568496cB"
+      abi: SmolBodies
+      startBlock: 9796413
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+        - SmolBodiesMint
+      abis:
+        - name: SmolBodies
+          file: ./abis/SmolBodies.json
+        - name: ERC721
+          file: ./abis/721.json
+      eventHandlers:
+        - event: SmolBodiesMint(address,uint256,string)
+          handler: handleMint
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/mappings/smol-bodies.ts
+  - name: Smol Bodies Gym
+    kind: ethereum/contract
+    network: rinkeby
+    source:
+      address: "0x67eDcba2b0D9cC0AB66eFa3447d03e3024C65956"
+      abi: Gym
+      startBlock: 9796412
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+      abis:
+        - name: Gym
+          file: ./abis/SmolBodiesGym.json
+        - name: SmolBodies
+          file: ./abis/SmolBodies.json
+        - name: ERC721
+          file: ./abis/721.json
+      eventHandlers:
+        - event: DropGym(uint256,uint256,uint256)
+          handler: handleDropGym
+        - event: JoinGym(uint256)
+          handler: handleJoinGym
+      file: ./src/mappings/smol-bodies.ts

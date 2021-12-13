@@ -10,8 +10,14 @@ export const EXPLORER =
 export const IPFS_GATEWAY = "https://treasure-marketplace.mypinata.cloud/ipfs/";
 
 export const RARITY_CALCULATION_BLOCK = BigInt.fromI32(
-  dataSource.network() == "rinkeby" ? 9712253 : 3652074
+  dataSource.network() == "rinkeby" ? 9712250 : 3688250
 );
+
+// Reminder: These need to be lowercase or they don't work!!
+export const SMOLBODIES_ADDRESS =
+  dataSource.network() == "rinkeby"
+    ? "0x9e638bfe78b372b8f5cc63cf6b01b90f568496cb"
+    : "0x17dacad7975960833f374622fad08b90ed67d1b5";
 
 export const SMOLBRAIN_ADDRESS =
   dataSource.network() == "rinkeby"

@@ -1,5 +1,5 @@
 import { BigInt, log, store } from "@graphprotocol/graph-ts";
-import { Listing, Student, UserToken } from "../generated/schema";
+import { Exerciser, Listing, Student, UserToken } from "../generated/schema";
 import {
   ItemCanceled,
   ItemListed,
@@ -87,7 +87,10 @@ export function handleItemListed(event: ItemListed): void {
   let collection = getOrCreateCollection(token.collection);
 
   let floorPrice = collection.floorPrice;
-  let status = Student.load(listing.id) ? "Hidden" : "Active";
+  let status =
+    Student.load(listing.id) || Exerciser.load(listing.id)
+      ? "Hidden"
+      : "Active";
 
   if (
     (floorPrice.isZero() || floorPrice.gt(pricePerItem)) &&
