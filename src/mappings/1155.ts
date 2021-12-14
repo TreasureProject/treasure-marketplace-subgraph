@@ -91,19 +91,25 @@ export function handleTransferSingle(event: TransferSingle): void {
     let id = getListingId(from, address, tokenId);
     let listing = Listing.load(id);
     let userToken = getOrCreateUserToken(id);
+    let updated = userToken.quantity.minus(quantity);
 
-    if (listing) {
-      listing.status = "Hidden";
-      listing.save();
-
-      updateCollectionFloorAndTotal(collection);
-    }
-
-    if (userToken.quantity.equals(quantity)) {
+    if (userToken.quantity.equals(quantity) || updated.lt(ZERO_BI)) {
       store.remove("UserToken", userToken.id);
     } else {
       userToken.quantity = userToken.quantity.minus(quantity);
       userToken.save();
+    }
+
+    if (listing && updated.lt(ZERO_BI)) {
+      if (listing.quantity.equals(updated.abs())) {
+        listing.status = "Hidden";
+      } else {
+        listing.quantity = listing.quantity.minus(updated.abs());
+      }
+
+      listing.save();
+
+      updateCollectionFloorAndTotal(collection);
     }
   } else if (STAKING_ADDRESS == from.toHexString()) {
     let id = getListingId(to, address, tokenId);
