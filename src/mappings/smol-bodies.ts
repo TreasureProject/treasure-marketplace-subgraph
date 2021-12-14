@@ -159,18 +159,6 @@ export function handleDropGym(event: DropGym): void {
     userToken.save();
   }
 
-  // ERC721.updateMetadata(smolbrains, tokenId, event.block.number);
-  // let contract = SmolBrains.bind(address);
-
-  // Snapshot IQ
-  // let iq = contract.try_brainz(tokenId);
-
-  // if (iq.reverted) {
-  //   log.info("iqReverted token: {}", [tokenId.toString()]);
-
-  //   return;
-  // }
-
   let platesAttribute = getOrCreateAttribute(
     getAttributeId(smolbodies, "Plates", tokenId.toHexString())
   );
@@ -209,50 +197,14 @@ export function handleDropGym(event: DropGym): void {
 
   log.info("dropGym newUri: {}", [metadataUri.slice(0, -1).concat(level)]);
 
-  // let calculated = BigInt.fromString(platesAttribute.value)
-  //   .div(BigInt.fromI32(50))
-  //   .toString();
-  // let size =
-  //   calculated.length < 18 ? "" : calculated.slice(0, calculated.length - 18);
-
-  // if (current == size || !size) {
-  //   return;
-  // }
-
-  // let uri = contract.try_tokenURI(tokenId);
-
-  // if (uri.reverted) {
-  //   log.info("uriReverted fetching new head size, token: {}", [
-  //     tokenId.toString(),
-  //   ]);
-
-  //   return;
-  // }
-
-  // let updated = uri.value.split("/").reverse()[0];
-
-  // if (updated != size) {
-  //   log.info("headSizeMismatch token: {}, uri: {}, calculated: {}", [
-  //     tokenId.toString(),
-  //     updated,
-  //     size,
-  //   ]);
-
-  //   return;
-  // }
-
   log.info("updateSwolSize token: {}, from: {}, to: {}", [
     tokenId.toString(),
     current,
     level,
   ]);
 
-  // token.metadataUri = uri.value;
-  // token.save();
-
   let collection = getOrCreateCollection(smolbodies.toHexString());
 
-  // addMetadataToToken(token, event.block.number, collection, true);
   update(token, collection, "Swol Size", level);
 
   if (
@@ -320,8 +272,6 @@ function update(
     );
   }
 
-  // Remove previous head size
-  // if (type == "Head Size" && value != "0") {
   log.info("removeSwolSize  token: {}, size: {}", [
     token.tokenId.toString(),
     value.toString(),
@@ -386,14 +336,12 @@ function update(
   log.info("removedMetadataAttribute id: {}", [
     [token.id, previousSwolSize.id].join("-"),
   ]);
-  // }
 
   createMetadataAttribute(attribute.id, token.id);
 
   attribute.save();
 
   let lookup = `${name},${value}`;
-  // let filters = token.filters;
 
   if (!filters.includes(lookup)) {
     token.filters = filters.concat([lookup]);
