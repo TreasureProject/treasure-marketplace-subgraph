@@ -357,10 +357,10 @@ export function addMetadataToToken(
 let thresholds = new TypedMap<string, number>();
 let isRinkeby = dataSource.network() == "rinkeby";
 
-thresholds.set("Smol Bodies", isRinkeby ? 20 : 4054);
-thresholds.set("Smol Brains", isRinkeby ? 241 : 10_665);
-thresholds.set("Smol Brains Land", isRinkeby ? 2 : 3_983);
-thresholds.set("Smol Cars", isRinkeby ? 120 : 7_872);
+thresholds.set("Smol Bodies", isRinkeby ? 20 : 5_622);
+thresholds.set("Smol Brains", isRinkeby ? 241 : 10_805);
+thresholds.set("Smol Brains Land", isRinkeby ? 2 : 4_050);
+thresholds.set("Smol Cars", isRinkeby ? 120 : 8_484);
 
 function shouldCalculate(collection: Collection): boolean {
   let count = collection._tokenIds.length;
@@ -598,7 +598,11 @@ export function checkMissingMetadata(
       let metadataTokenId = getTokenId(address, metadataId);
       let metadataToken = getOrCreateToken(metadataTokenId);
 
-      metadataToken.metadataUri = uri.value;
+      // For smol bodies
+      metadataToken.metadataUri = uri.value.replace(
+        "QmSn56t6vRtWxCcc8jqS6YtzdjfR564GFTvehGek6eKLmX",
+        "Qmbt6W9QB74VZzJfWbqG7vi2hiE2K4AnoyvWGFDHEjgoqN"
+      );
 
       addMetadataToToken(metadataToken, block, collection);
 
