@@ -477,8 +477,8 @@ export function checkForRarityUpdates(
       let trait = split[0];
       let value = split[1];
 
-      // Don't include Head Size in rarity calculation
-      if (trait == "Head Size") {
+      // Don't include IQ or Head Size in rarity calculation
+      if (["IQ", "Head Size"].includes(trait)) {
         continue;
       }
 
