@@ -15,7 +15,6 @@ import {
   getOrCreateUserToken,
   getTokenId,
   isMint,
-  toBigDecimal,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 import {
@@ -46,7 +45,6 @@ export function handleTransfer(event: Transfer): void {
     );
 
     attribute.name = "IQ";
-    attribute.percentage = toBigDecimal(0);
     attribute.value = ZERO_BI.toString();
 
     attribute._tokenIds = [];
