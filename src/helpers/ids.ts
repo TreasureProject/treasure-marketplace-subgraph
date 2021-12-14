@@ -1,7 +1,7 @@
-import { Address, BigInt } from "@graphprotocol/graph-ts";
+import { Address, Bytes, BigInt } from "@graphprotocol/graph-ts";
 
 export function getAttributeId(
-  token: Address,
+  token: Bytes,
   name: string,
   value: string
 ): string {
@@ -22,6 +22,6 @@ export function getListingId(
   ].join("-");
 }
 
-export function getTokenId(tokenAddress: Address, tokenId: BigInt): string {
+export function getTokenId(tokenAddress: Bytes, tokenId: BigInt): string {
   return [tokenAddress.toHexString(), tokenId.toHexString()].join("-");
 }

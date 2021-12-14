@@ -6,6 +6,7 @@ import {
   ONE_BI,
   ZERO_BI,
   addMetadataToToken,
+  checkForRarityUpdates,
   checkMissingMetadata,
   getAttributeId,
   getOrCreateAttribute,
@@ -104,6 +105,7 @@ export function handleTransfer(event: Transfer): void {
   userToken.user = buyer.id;
 
   checkMissingMetadata(collection, event.block.number);
+  checkForRarityUpdates(collection, isMint(from) ? token : null);
 
   collection.save();
   token.save();
