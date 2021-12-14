@@ -69,6 +69,10 @@ type Listing @entity {
   collection: Collection!
   collectionName: String!
   expires: BigInt!
+
+  "Used to support multiple filters with metadata attributes"
+  filters: [String!]
+
   nicePrice: String
   pricePerItem: BigInt!
   quantity: BigInt!

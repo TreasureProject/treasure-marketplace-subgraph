@@ -116,6 +116,7 @@ export function handleTransfer(event: Transfer): void {
 export function updateMetadata(
   address: Address,
   tokenId: BigInt,
+  listing: Listing | null,
   block: BigInt
 ): void {
   let contract = SmolBrains.bind(address);
@@ -190,6 +191,12 @@ export function updateMetadata(
   let collection = getOrCreateCollection(address.toHexString());
 
   addMetadataToToken(token, block, collection, true);
+
+  // Save updated filters to existing listing
+  if (listing) {
+    listing.filters = token.filters;
+    listing.save();
+  }
 
   if (
     !MetadataAttribute.load(

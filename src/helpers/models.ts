@@ -109,6 +109,8 @@ export function getOrCreateListing(id: string): Listing {
 
   if (!listing) {
     listing = new Listing(id);
+
+    listing.filters = [];
   }
 
   return listing;

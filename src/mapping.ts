@@ -120,6 +120,7 @@ export function handleItemListed(event: ItemListed): void {
   listing.collection = token.collection;
   listing.collectionName = collection.name;
   listing.expires = params.expirationTime;
+  listing.filters = token.filters;
   listing.pricePerItem = pricePerItem;
   listing.quantity = quantity;
   listing.seller = seller.toHexString();
@@ -181,6 +182,7 @@ export function handleItemSold(event: ItemSold): void {
   sold.collection = listing.collection;
   sold.collectionName = listing.collectionName;
   sold.expires = ZERO_BI;
+  sold.filters = null;
   sold.pricePerItem = pricePerItem;
   sold.nicePrice = formatPrice(pricePerItem);
   sold.quantity = updatedQuantity;
