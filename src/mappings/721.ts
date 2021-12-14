@@ -6,6 +6,7 @@ import {
   ONE_BI,
   ZERO_BI,
   addMetadataToToken,
+  checkForRarityUpdates,
   checkMissingMetadata,
   getAttributeId,
   getOrCreateAttribute,
@@ -62,10 +63,12 @@ export function handleTransfer(event: Transfer): void {
 
   let metadata = Metadata.load(token.id);
 
-  if (metadata && metadata.description != "Smol Brains Land") {
-    token.name = `${metadata.description} ${metadata.name}`;
-  } else {
-    token.name = `${collection.name} ${`#${tokenId.toString()}`}`;
+  if (collection.name != "Smol Cars") {
+    if (metadata && metadata.description != "Smol Brains Land") {
+      token.name = `${metadata.description} ${metadata.name}`;
+    } else {
+      token.name = `${collection.name} ${`#${tokenId.toString()}`}`;
+    }
   }
 
   // Add missing metadata id to be tried again
@@ -102,6 +105,7 @@ export function handleTransfer(event: Transfer): void {
   userToken.user = buyer.id;
 
   checkMissingMetadata(collection, event.block.number);
+  checkForRarityUpdates(collection, isMint(from) ? token : null);
 
   collection.save();
   token.save();

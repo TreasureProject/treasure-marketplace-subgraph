@@ -276,6 +276,8 @@ dataSources:
       abis:
         - name: SmolCars
           file: ./abis/SmolCars.json
+        - name: ERC721
+          file: ./abis/721.json
       eventHandlers:
         - event: SmolCarMint(indexed address,uint256,string)
           handler: handleMint

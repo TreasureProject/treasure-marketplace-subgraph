@@ -297,6 +297,8 @@ dataSources:
       abis:
         - name: SmolCars
           file: ./abis/SmolCars.json
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
       eventHandlers:
         - event: SmolCarMint(indexed address,uint256,string)
           handler: handleMint
