@@ -205,7 +205,7 @@ export function handleDropGym(event: DropGym): void {
 
   let collection = getOrCreateCollection(smolbodies.toHexString());
 
-  update(token, collection, "Swol Size", level);
+  update(token, collection, listing, "Swol Size", level);
 
   if (
     !MetadataAttribute.load(
@@ -247,6 +247,7 @@ export function handleJoinGym(event: JoinGym): void {
 function update(
   token: Token,
   collection: Collection,
+  listing: Listing | null,
   name: string,
   value: string
 ): void {
@@ -346,5 +347,11 @@ function update(
   if (!filters.includes(lookup)) {
     token.filters = filters.concat([lookup]);
     token.save();
+  }
+
+  // Save updated filters to existing listing
+  if (listing) {
+    listing.filters = token.filters;
+    listing.save();
   }
 }
