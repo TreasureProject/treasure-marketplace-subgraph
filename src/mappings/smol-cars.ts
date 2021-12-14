@@ -3,6 +3,7 @@ import { Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
   addMetadataToToken,
+  checkForRarityUpdates,
   checkMissingMetadata,
   getCreator,
   getListingId,
@@ -68,6 +69,7 @@ export function handleMint(event: SmolCarMint): void {
   userToken.user = buyer.id;
 
   checkMissingMetadata(collection, event.block.number);
+  checkForRarityUpdates(collection, token);
 
   collection.save();
   token.save();
