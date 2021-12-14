@@ -116,6 +116,7 @@ export function handleItemListed(event: ItemListed): void {
     collection.totalListings = collection.totalListings.plus(ONE_BI);
   }
 
+  listing._listedQuantity = quantity;
   listing.blockTimestamp = event.block.timestamp;
   listing.collection = token.collection;
   listing.collectionName = collection.name;
@@ -161,6 +162,7 @@ export function handleItemSold(event: ItemSold): void {
     store.remove("Listing", listing.id);
   } else {
     listing.quantity = listing.quantity.minus(quantity);
+    listing._listedQuantity = listing.quantity;
     listing.save();
   }
 

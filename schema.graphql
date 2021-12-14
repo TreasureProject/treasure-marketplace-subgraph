@@ -64,6 +64,9 @@ type Creator @entity {
 type Listing @entity {
   id: ID!
 
+  "Track originally listed quantity, needed when staking Treasures"
+  _listedQuantity: BigInt!
+
   blockTimestamp: BigInt!
   buyer: User
   collection: Collection!
