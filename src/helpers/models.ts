@@ -5,6 +5,7 @@ import {
   JSONValue,
   JSONValueKind,
   TypedMap,
+  dataSource,
   ipfs,
   json,
   log,
@@ -196,8 +197,6 @@ export function addMetadataToToken(
     return;
   }
 
-  let collectionAddress = Address.fromString(token.collection);
-
   // This is because the Extra Life metadata is an array of a single object.
   // https://gateway.pinata.cloud/ipfs/QmYX3wDGawC2sBHW9GMuBkiE8UmaEqJu4hDwmFeKwQMZYj/80.json
   if (obj.kind === JSONValueKind.ARRAY) {
@@ -247,7 +246,7 @@ export function addMetadataToToken(
         : getString(jsonValue);
 
     let attribute = getOrCreateAttribute(
-      getAttributeId(collectionAddress, type, value)
+      getAttributeId(collection.address, type, value)
     );
 
     attribute.collection = collection.id;
@@ -293,7 +292,7 @@ export function addMetadataToToken(
         ]);
       }
 
-      let id = getAttributeId(collectionAddress, type, previousValue);
+      let id = getAttributeId(collection.address, type, previousValue);
       let previousHeadSize = Attribute.load(id);
 
       if (!previousHeadSize) {
@@ -353,11 +352,39 @@ export function addMetadataToToken(
   }
 
   metadata.save();
+}
 
-  let ids = collection._tokenIds;
+let thresholds = new TypedMap<string, number>();
+let isRinkeby = dataSource.network() == "rinkeby";
+
+thresholds.set("Smol Bodies", isRinkeby ? 20 : 4054);
+thresholds.set("Smol Brains", isRinkeby ? 241 : 10_665);
+thresholds.set("Smol Brains Land", isRinkeby ? 2 : 3_983);
+thresholds.set("Smol Cars", isRinkeby ? 120 : 7_872);
+
+function shouldCalculate(collection: Collection): boolean {
+  let count = collection._tokenIds.length;
+  let threshold = thresholds.getEntry(collection.name);
+
+  return threshold ? count >= threshold.value : false;
+}
+
+export function checkForRarityUpdates(
+  collection: Collection,
+  token: Token | null
+): void {
+  if (!shouldCalculate(collection)) {
+    return;
+  }
+
   let attributeIds = collection._attributeIds;
+  let ids = collection._tokenIds;
   let total = ids.length;
+  // TODO: Try TypedMap?
   let rarities = new Array<TokenRarity>();
+  let modifier = token ? 1 : 0;
+
+  log.info("attributePercentageStart", []);
 
   // Loop through attributes and calculate percentage
   for (let index = 0; index < attributeIds.length; index++) {
@@ -372,10 +399,9 @@ export function addMetadataToToken(
     let attribute = Attribute.load(id);
 
     if (!attribute) {
-      log.info("percentageNoAttribute id: {}, index: {}, token: {}", [
+      log.info("percentageNoAttribute id: {}, index: {}", [
         id,
         index.toString(),
-        token.tokenId.toString(),
       ]);
 
       return;
@@ -387,45 +413,63 @@ export function addMetadataToToken(
     attribute.save();
   }
 
-  if (skip) {
-    log.info("skipRarityCalc collection: {}, tokenId: {}", [
-      collection.name,
-      token.tokenId.toString(),
-    ]);
+  log.info("attributePercentageComplete", []);
 
-    return;
-  }
+  // TODO: Remove this for rarity calculation
+  return;
 
-  if (block.lt(RARITY_CALCULATION_BLOCK)) {
-    return;
-  }
-
-  log.info("rarityCalculationStart tokens: {}, trigger: {}", [
-    total.toString(),
-    token.tokenId.toString(),
-  ]);
+  log.info("rarityCalculationStart", []);
 
   // Setup rarity array
-  for (let index = 0; index < ids.length - 1; index++) {
+  for (let index = 0; index < ids.length - modifier; index++) {
     let id = BigInt.fromString(ids[index]);
 
     rarities[index] = {
-      token: getOrCreateToken(getTokenId(collectionAddress, id)),
+      token: getOrCreateToken(getTokenId(collection.address, id)),
       rarity: toBigDecimal(0),
     };
   }
 
-  // Add current token to the end of rarities array
-  rarities.push({
-    token,
-    rarity: toBigDecimal(0),
-  });
+  log.info("rarityArraySetup items: {}", [rarities.length.toString()]);
+
+  // for (let index = 0; index < 10_000; index++) {
+  //   let id = BigInt.fromString(ids[index]);
+
+  //   rarities[index] = {
+  //     token: getOrCreateToken(getTokenId(collection.address, id)),
+  //     rarity: toBigDecimal(0),
+  //   };
+  // }
+
+  // Add current token to the end of rarities array, if a mint
+  if (token) {
+    log.info("pushMintToken {}", [token.tokenId.toString()]);
+
+    rarities.push({
+      token,
+      rarity: toBigDecimal(0),
+    });
+  }
+
+  log.info("rarityToolsCalculation items: {}", [rarities.length.toString()]);
 
   // Loop through tokens and calculate rarity based on attributes
   for (let index = 0; index < rarities.length; index++) {
+    log.info("rarityCalulation index: {}, total: {}", [
+      index.toString(),
+      rarities.length.toString(),
+    ]);
+
     let _token = rarities[index].token;
     let filters = _token.filters;
     let rarity = toBigDecimal(0);
+    let _tokenId = _token.tokenId.toString();
+
+    log.info("rarityCalulationFilters index: {}, token: {}, filters: {}", [
+      index.toString(),
+      _tokenId,
+      filters.join(":"),
+    ]);
 
     for (let _index = 0; _index < filters.length; _index++) {
       let filter = filters[_index];
@@ -433,47 +477,101 @@ export function addMetadataToToken(
       let trait = split[0];
       let value = split[1];
 
-      // Don't include IQ or Head Size in rarity calculation
-      if (["IQ", "Head Size"].includes(trait)) {
+      // Don't include Head Size in rarity calculation
+      if (trait == "Head Size") {
         continue;
       }
 
       let attribute = Attribute.load(
-        getAttributeId(collectionAddress, trait, value)
+        getAttributeId(collection.address, trait, value)
       );
 
       // Shouldn't happen, but just in case
       if (!attribute) {
+        log.info(
+          "attributeFailed index: {}, token: {}, trait: '{}', value: '{}'",
+          [index.toString(), _tokenId, trait, value]
+        );
+
         continue;
       }
 
       let percentage = attribute.percentage;
 
-      // Shouldn't be hit as we exclude IQ already, but makes AS happy
+      // Shouldn't be hit, but makes AS happy
       if (!percentage) {
+        log.info(
+          "percentageFailed index: {}, token: {}, trait: '{}', value: '{}'",
+          [index.toString(), _tokenId, trait, value]
+        );
+
         continue;
       }
 
+      log.info(
+        "beforeRarity index: {}, token: {}, trait: '{}', value: '{}', percentage: {}, rarity: {}",
+        [
+          index.toString(),
+          _tokenId,
+          trait,
+          value,
+          percentage.toString(),
+          rarity.toString(),
+        ]
+      );
+
       rarity = rarity.plus(toBigDecimal(1).div(percentage));
+
+      log.info(
+        "afterRarity index: {}, token: {}, trait: '{}', value: '{}', rarity: {}",
+        [index.toString(), _tokenId, trait, value, rarity.toString()]
+      );
     }
 
+    log.info("rarityCalulated index: {}, token: {}, rarity: {}", [
+      index.toString(),
+      _tokenId,
+      rarity.toString(),
+    ]);
+
     rarities[index].rarity = rarity;
+
+    log.info("raritySetOnIndex index: {}, token: {}", [
+      index.toString(),
+      _tokenId,
+    ]);
   }
+
+  log.info("rarityCalculationComplete", []);
 
   rarities.sort((left, right) => (right.rarity.gt(left.rarity) ? 1 : -1));
 
+  log.info("rarityCalculationSorted", []);
+
+  // Save 2,000 at a time.
+  let chunk = 2000;
+
   for (let index = 0; index < rarities.length; index++) {
+    // Stop once we've completed our chunk size
+    if (chunk === 0) {
+      break;
+    }
+
+    let rank = index + 1;
     let item = rarities[index];
     let _token = item.token;
+    let rarity = _token.rarity;
 
-    _token.rarity = item.rarity;
-    _token.rank = index + 1;
-    _token.save();
+    if (!rarity || rarity.notEqual(item.rarity) || _token.rank !== rank) {
+      _token.rarity = item.rarity;
+      _token.rank = rank;
+      _token.save();
+
+      chunk--;
+    }
   }
 
-  log.info("rarityCalculationRanksComplete tokenId: {}", [
-    token.tokenId.toString(),
-  ]);
+  log.info("rarityCalculationRanksComplete leftover: {}", [chunk.toString()]);
 }
 
 export function checkMissingMetadata(
