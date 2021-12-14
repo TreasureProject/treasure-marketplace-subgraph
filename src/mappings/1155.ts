@@ -1,4 +1,4 @@
-import { log, store } from "@graphprotocol/graph-ts";
+import { BigInt, log, store } from "@graphprotocol/graph-ts";
 import { Listing, Metadata } from "../../generated/schema";
 import {
   ERC1155,
@@ -115,20 +115,38 @@ export function handleTransferSingle(event: TransferSingle): void {
     let id = getListingId(to, address, tokenId);
     let listing = Listing.load(id);
     let userToken = getOrCreateUserToken(id);
+    let updated = BigInt.fromI32(0); //userToken.quantity.minus(quantity);
 
     if (listing) {
-      listing.status = "Active";
-      listing.save();
+      if (listing._listedQuantity.notEqual(listing.quantity)) {
+        listing.quantity = listing.quantity.plus(quantity);
 
-      collection._listingIds = collection._listingIds.concat([listing.id]);
+        if (listing.quantity.gt(listing._listedQuantity)) {
+          updated = listing._listedQuantity.minus(listing.quantity);
 
-      updateCollectionFloorAndTotal(collection);
-    } else {
+          listing.quantity = listing._listedQuantity;
+        }
+
+        listing.status = "Active";
+        listing.save();
+
+        collection._listingIds = collection._listingIds.concat([listing.id]);
+
+        updateCollectionFloorAndTotal(collection);
+      } else {
+        // Set updated to get our user tokens correct
+        updated = quantity.neg();
+      }
+    }
+
+    if (!listing || updated.lt(ZERO_BI)) {
       let toUser = getOrCreateUser(to.toHexString());
 
       userToken.token = token.id;
       userToken.user = toUser.id;
-      userToken.quantity = userToken.quantity.plus(quantity);
+      userToken.quantity = userToken.quantity.plus(
+        updated.lt(ZERO_BI) ? updated.abs() : quantity
+      );
       userToken.save();
     }
   } else {
