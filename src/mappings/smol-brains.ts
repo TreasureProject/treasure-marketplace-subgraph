@@ -17,12 +17,13 @@ import {
   isMint,
   updateCollectionFloorAndTotal,
 } from "../helpers";
+import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
 import {
   DropSchool,
   JoinSchool,
 } from "../../generated/Smol Brains School/School";
-import { Address, store } from "@graphprotocol/graph-ts";
-import { Listing, Student } from "../../generated/schema";
+import { Listing, MetadataAttribute, Student } from "../../generated/schema";
+import { SmolBrains } from "../../generated/Smol Brains School/SmolBrains";
 
 export function handleTransfer(event: Transfer): void {
   let collection = getOrCreateCollection(event.address.toHexString());
@@ -86,7 +87,75 @@ export function handleDropSchool(event: DropSchool): void {
     userToken.save();
   }
 
-  ERC721.updateMetadata(smolbrains, tokenId, listing, event.block.number);
+  let contract = SmolBrains.bind(smolbrains);
+
+  // Snapshot IQ
+  let iq = contract.try_brainz(tokenId);
+
+  if (iq.reverted) {
+    log.info("iqReverted token: {}", [tokenId.toString()]);
+
+    return;
+  }
+
+  let iqAttribute = getOrCreateAttribute(
+    getAttributeId(smolbrains, "IQ", tokenId.toHexString())
+  );
+
+  iqAttribute.value = iq.value.toString();
+  iqAttribute.save();
+
+  let calculated = BigInt.fromString(iqAttribute.value)
+    .div(BigInt.fromI32(50))
+    .toString();
+
+  let level =
+    calculated.length <= 18 ? "0" : calculated.slice(0, calculated.length - 18);
+
+  // Did our smol grow?
+  let token = getOrCreateToken(getTokenId(smolbrains, tokenId));
+  let metadataUri = token.metadataUri;
+
+  log.info("dropSchool metadataUri: {}, level: {}", [
+    metadataUri ? metadataUri.toString() : "null",
+    level,
+  ]);
+
+  if (metadataUri === null) {
+    return;
+  }
+
+  let current = metadataUri.slice(-1);
+
+  log.info("dropSchool current: {}, level: {}", [current, level]);
+
+  if (current == level) {
+    return;
+  }
+
+  token.metadataUri = metadataUri.slice(0, -1).concat(level);
+  token.save();
+
+  let collection = getOrCreateCollection(smolbrains.toHexString());
+
+  ERC721.updateMetadata(token, collection, listing, "Head Size", level);
+
+  if (
+    !MetadataAttribute.load(
+      [token.id, getAttributeId(smolbrains, "Head Size", level)].join("-")
+    )
+  ) {
+    log.info("headSizeFailed token: {}", [token.tokenId.toString()]);
+
+    let missingIds = collection._missingMetadataIds;
+
+    if (!missingIds.includes(token.tokenId.toString())) {
+      collection._missingMetadataIds = missingIds.concat([
+        token.tokenId.toString(),
+      ]);
+      collection.save();
+    }
+  }
 }
 
 export function handleJoinSchool(event: JoinSchool): void {

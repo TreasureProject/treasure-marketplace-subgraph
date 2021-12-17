@@ -4,11 +4,15 @@ import { Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
   SMOLBODIES_ADDRESS,
+  ZERO_BI,
   addMetadataToToken,
   checkForRarityUpdates,
   checkMissingMetadata,
+  createMetadataAttribute,
+  getAttributeId,
   getCreator,
   getListingId,
+  getOrCreateAttribute,
   getOrCreateCollection,
   getOrCreateToken,
   getOrCreateUser,
@@ -16,22 +20,13 @@ import {
   getTokenId,
   isMint,
   updateCollectionFloorAndTotal,
-  getOrCreateAttribute,
-  getAttributeId,
-  createMetadataAttribute,
-  ZERO_BI,
-  toBigDecimal,
-  removeFromArray,
 } from "../helpers";
 import { DropGym, JoinGym } from "../../generated/Smol Bodies Gym/Gym";
 import {
-  Attribute,
-  Collection,
   Exerciser,
   Listing,
   Metadata,
   MetadataAttribute,
-  Token,
 } from "../../generated/schema";
 import { SmolBodiesMint } from "../../generated/Smol Bodies/SmolBodies";
 
@@ -205,7 +200,7 @@ export function handleDropGym(event: DropGym): void {
 
   let collection = getOrCreateCollection(smolbodies.toHexString());
 
-  update(token, collection, listing, "Swol Size", level);
+  ERC721.updateMetadata(token, collection, listing, "Swol Size", level);
 
   if (
     !MetadataAttribute.load(
@@ -241,117 +236,5 @@ export function handleJoinGym(event: JoinGym): void {
     updateCollectionFloorAndTotal(getOrCreateCollection(SMOLBODIES_ADDRESS));
   } else {
     store.remove("UserToken", id);
-  }
-}
-
-function update(
-  token: Token,
-  collection: Collection,
-  listing: Listing | null,
-  name: string,
-  value: string
-): void {
-  let attribute = getOrCreateAttribute(
-    getAttributeId(collection.address, name, value)
-  );
-
-  attribute.collection = collection.id;
-  attribute.name = name;
-  attribute.value = value;
-
-  if (!collection._attributeIds.includes(attribute.id)) {
-    collection._attributeIds = collection._attributeIds.concat([attribute.id]);
-    collection.save();
-  }
-
-  if (!attribute._tokenIds.includes(token.tokenId.toString())) {
-    attribute._tokenIds = attribute._tokenIds.concat([
-      token.tokenId.toString(),
-    ]);
-    attribute.percentage = toBigDecimal(attribute._tokenIds.length).div(
-      toBigDecimal(collection._tokenIds.length)
-    );
-  }
-
-  log.info("removeSwolSize  token: {}, size: {}", [
-    token.tokenId.toString(),
-    value.toString(),
-  ]);
-
-  let previousValue = "0";
-  let filters = token.filters;
-
-  for (let _index = 0; _index < filters.length; _index++) {
-    let parts = filters[_index].split(",");
-
-    if (parts[0] != name) {
-      continue;
-    }
-
-    previousValue = parts[1];
-
-    log.info("foundPreviousSwolSize token: {}, value: {}", [
-      token.tokenId.toString(),
-      previousValue,
-    ]);
-  }
-
-  let id = getAttributeId(collection.address, name, previousValue);
-  let previousSwolSize = Attribute.load(id);
-
-  if (!previousSwolSize) {
-    log.info("notPreviousSwolSize type: {}, previousValue: {}, id: {}", [
-      name,
-      previousValue,
-      id,
-    ]);
-
-    return;
-  }
-
-  log.info("previousHeadSize id: {}, name: {}, value: {}", [
-    previousSwolSize.id,
-    previousSwolSize.name,
-    previousSwolSize.value,
-  ]);
-
-  previousSwolSize._tokenIds = removeFromArray(
-    previousSwolSize._tokenIds,
-    token.tokenId.toString()
-  );
-
-  previousSwolSize.percentage = toBigDecimal(
-    previousSwolSize._tokenIds.length
-  ).div(toBigDecimal(collection._tokenIds.length));
-
-  previousSwolSize.save();
-
-  token.filters = filters = removeFromArray(
-    token.filters,
-    `${name},${previousValue}`
-  );
-  token.save();
-
-  store.remove("MetadataAttribute", [token.id, previousSwolSize.id].join("-"));
-
-  log.info("removedMetadataAttribute id: {}", [
-    [token.id, previousSwolSize.id].join("-"),
-  ]);
-
-  createMetadataAttribute(attribute.id, token.id);
-
-  attribute.save();
-
-  let lookup = `${name},${value}`;
-
-  if (!filters.includes(lookup)) {
-    token.filters = filters.concat([lookup]);
-    token.save();
-  }
-
-  // Save updated filters to existing listing
-  if (listing) {
-    listing.filters = token.filters;
-    listing.save();
   }
 }
