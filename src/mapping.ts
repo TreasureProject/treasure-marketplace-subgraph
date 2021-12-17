@@ -175,7 +175,8 @@ export function handleItemSold(event: ItemSold): void {
   collection.save();
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
-  let sold = getOrCreateListing(`${listing.id}-${listing.blockTimestamp}`);
+  let hash = event.transaction.hash.toHexString();
+  let sold = getOrCreateListing(`${listing.id}-${hash}`);
   let pricePerItem = listing.pricePerItem;
   let updatedQuantity = sold.quantity ? sold.quantity.plus(quantity) : quantity;
 
@@ -188,11 +189,12 @@ export function handleItemSold(event: ItemSold): void {
   sold.pricePerItem = pricePerItem;
   sold.nicePrice = formatPrice(pricePerItem);
   sold.quantity = updatedQuantity;
+  sold.seller = seller.toHexString();
   sold.status = "Sold";
   sold.token = listing.token;
   sold.tokenName = listing.tokenName;
   sold.totalPrice = formatPrice(pricePerItem.times(updatedQuantity));
-  sold.transactionLink = `https://${EXPLORER}/tx/${event.transaction.hash.toHexString()}`;
+  sold.transactionLink = `https://${EXPLORER}/tx/${hash}`;
   sold.user = seller.toHexString();
 
   sold.save();
