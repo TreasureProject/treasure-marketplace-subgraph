@@ -26,6 +26,7 @@ import {
   removeFromArray,
   toBigDecimal,
   updateCollectionFloorAndTotal,
+  getOrCreateMetadata,
 } from "../helpers";
 import { log, store } from "@graphprotocol/graph-ts";
 
@@ -218,6 +219,15 @@ export function updateMetadata(
   createMetadataAttribute(attribute.id, token.id);
 
   attribute.save();
+
+  // Update image in metadata
+  let metadata = getOrCreateMetadata(token.id);
+
+  metadata.image = metadata.image.replace(
+    `/${previousValue}.png`,
+    `/${value}.png`
+  );
+  metadata.save();
 
   let lookup = `${name},${value}`;
 
