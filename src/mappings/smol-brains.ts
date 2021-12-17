@@ -110,7 +110,7 @@ export function handleDropSchool(event: DropSchool): void {
     .toString();
 
   let level =
-    calculated.length < 18 ? "" : calculated.slice(0, calculated.length - 18);
+    calculated.length < 18 ? "0" : calculated.slice(0, calculated.length - 18);
 
   // Did our smol grow?
   let token = getOrCreateToken(getTokenId(smolbrains, tokenId));
