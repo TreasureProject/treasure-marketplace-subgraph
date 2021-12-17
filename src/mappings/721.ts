@@ -1,6 +1,10 @@
-import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
-import { Listing, Metadata, MetadataAttribute } from "../../generated/schema";
-import { SmolBrains } from "../../generated/Smol Brains School/SmolBrains";
+import {
+  Attribute,
+  Collection,
+  Listing,
+  Metadata,
+  Token,
+} from "../../generated/schema";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
@@ -8,6 +12,7 @@ import {
   addMetadataToToken,
   checkForRarityUpdates,
   checkMissingMetadata,
+  createMetadataAttribute,
   getAttributeId,
   getOrCreateAttribute,
   getOrCreateCollection,
@@ -18,8 +23,11 @@ import {
   getTokenId,
   isMint,
   isSafeTransferFrom,
+  removeFromArray,
+  toBigDecimal,
   updateCollectionFloorAndTotal,
 } from "../helpers";
+import { log, store } from "@graphprotocol/graph-ts";
 
 export function handleTransfer(event: Transfer): void {
   let params = event.params;
@@ -114,106 +122,113 @@ export function handleTransfer(event: Transfer): void {
 }
 
 export function updateMetadata(
-  address: Address,
-  tokenId: BigInt,
+  token: Token,
+  collection: Collection,
   listing: Listing | null,
-  block: BigInt
+  name: string,
+  value: string
 ): void {
-  let contract = SmolBrains.bind(address);
-
-  // Snapshot IQ
-  let iq = contract.try_brainz(tokenId);
-
-  if (iq.reverted) {
-    log.info("iqReverted token: {}", [tokenId.toString()]);
-
-    return;
-  }
-
-  let iqAttribute = getOrCreateAttribute(
-    getAttributeId(address, "IQ", tokenId.toHexString())
+  let attribute = getOrCreateAttribute(
+    getAttributeId(collection.address, name, value)
   );
 
-  iqAttribute.value = iq.value.toString();
-  iqAttribute.save();
+  attribute.collection = collection.id;
+  attribute.name = name;
+  attribute.value = value;
 
-  // Did our brain grow?
-  let token = getOrCreateToken(getTokenId(address, tokenId));
-  let metadataUri = token.metadataUri;
-
-  if (metadataUri === null) {
-    return;
+  if (!collection._attributeIds.includes(attribute.id)) {
+    collection._attributeIds = collection._attributeIds.concat([attribute.id]);
+    collection.save();
   }
 
-  let head = metadataUri.split("/").reverse()[0];
-  let calculated = BigInt.fromString(iqAttribute.value)
-    .div(BigInt.fromI32(50))
-    .toString();
-  let size =
-    calculated.length < 18 ? "" : calculated.slice(0, calculated.length - 18);
-
-  if (head == size || !size) {
-    return;
-  }
-
-  let uri = contract.try_tokenURI(tokenId);
-
-  if (uri.reverted) {
-    log.info("uriReverted fetching new head size, token: {}", [
-      tokenId.toString(),
+  if (!attribute._tokenIds.includes(token.tokenId.toString())) {
+    attribute._tokenIds = attribute._tokenIds.concat([
+      token.tokenId.toString(),
     ]);
-
-    return;
+    attribute.percentage = toBigDecimal(attribute._tokenIds.length).div(
+      toBigDecimal(collection._tokenIds.length)
+    );
   }
 
-  let updated = uri.value.split("/").reverse()[0];
-
-  if (updated != size) {
-    log.info("headSizeMismatch token: {}, uri: {}, calculated: {}", [
-      tokenId.toString(),
-      updated,
-      size,
-    ]);
-
-    return;
-  }
-
-  log.info("updateHeadSize token: {}, from: {}, to: {}, update: {}", [
-    tokenId.toString(),
-    head,
-    size,
-    updated,
+  log.info("removeSize token: {}, size: {}", [
+    token.tokenId.toString(),
+    value.toString(),
   ]);
 
-  token.metadataUri = uri.value;
+  let previousValue = "0";
+  let filters = token.filters;
+
+  for (let _index = 0; _index < filters.length; _index++) {
+    let parts = filters[_index].split(",");
+
+    if (parts[0] != name) {
+      continue;
+    }
+
+    previousValue = parts[1];
+
+    log.info("foundPreviousSize token: {}, value: {}", [
+      token.tokenId.toString(),
+      previousValue,
+    ]);
+  }
+
+  let id = getAttributeId(collection.address, name, previousValue);
+  let previousSize = Attribute.load(id);
+
+  if (!previousSize) {
+    log.info("notPreviousSize type: {}, previousValue: {}, id: {}", [
+      name,
+      previousValue,
+      id,
+    ]);
+
+    return;
+  }
+
+  log.info("previousSize id: {}, name: {}, value: {}", [
+    previousSize.id,
+    previousSize.name,
+    previousSize.value,
+  ]);
+
+  previousSize._tokenIds = removeFromArray(
+    previousSize._tokenIds,
+    token.tokenId.toString()
+  );
+
+  previousSize.percentage = toBigDecimal(previousSize._tokenIds.length).div(
+    toBigDecimal(collection._tokenIds.length)
+  );
+
+  previousSize.save();
+
+  token.filters = filters = removeFromArray(
+    token.filters,
+    `${name},${previousValue}`
+  );
   token.save();
 
-  let collection = getOrCreateCollection(address.toHexString());
+  store.remove("MetadataAttribute", [token.id, previousSize.id].join("-"));
 
-  addMetadataToToken(token, block, collection, true);
+  log.info("removedMetadataAttribute id: {}", [
+    [token.id, previousSize.id].join("-"),
+  ]);
+
+  createMetadataAttribute(attribute.id, token.id);
+
+  attribute.save();
+
+  let lookup = `${name},${value}`;
+
+  if (!filters.includes(lookup)) {
+    token.filters = filters.concat([lookup]);
+    token.save();
+  }
 
   // Save updated filters to existing listing
   if (listing) {
     listing.filters = token.filters;
     listing.save();
-  }
-
-  if (
-    !MetadataAttribute.load(
-      [token.id, getAttributeId(address, "Head Size", updated)].join("-")
-    )
-  ) {
-    log.info("headSizeFailed token: {}", [token.tokenId.toString()]);
-
-    let missingIds = collection._missingMetadataIds;
-
-    if (!missingIds.includes(token.tokenId.toString())) {
-      collection._missingMetadataIds = missingIds.concat([
-        token.tokenId.toString(),
-      ]);
-      collection.save();
-    }
-
-    return;
   }
 }
