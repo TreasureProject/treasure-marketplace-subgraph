@@ -112,6 +112,10 @@ export function handleDropSchool(event: DropSchool): void {
   let level =
     calculated.length <= 18 ? "0" : calculated.slice(0, calculated.length - 18);
 
+  if (BigInt.fromString(level).gt(BigInt.fromI32(5))) {
+    level = "5";
+  }
+
   // Did our smol grow?
   let token = getOrCreateToken(getTokenId(smolbrains, tokenId));
   let metadataUri = token.metadataUri;
