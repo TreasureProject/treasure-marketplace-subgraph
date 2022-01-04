@@ -48,7 +48,6 @@ export function handleItemCanceled(event: ItemCanceled): void {
     getListingId(seller, params.nftAddress, params.tokenId)
   );
   let user = getOrCreateUser(seller.toHexString());
-  let userToken = getOrCreateUserToken(listing.id);
 
   if (!listing) {
     log.info("[Listing is null]: {}", [params.seller.toHexString()]);
@@ -58,18 +57,19 @@ export function handleItemCanceled(event: ItemCanceled): void {
     log.info("[User is null]: {}", [params.seller.toHexString()]);
     return;
   }
-  if (!userToken) {
-    log.info("[UserToken is null]: {}", [params.seller.toHexString()]);
-    return;
+
+  // If not staked, move back into users inventory
+  if (!(Student.load(listing.id) || Exerciser.load(listing.id))) {
+    let userToken = getOrCreateUserToken(listing.id);
+
+    userToken.quantity = userToken.quantity.plus(listing.quantity);
+    userToken.token = listing.token;
+    userToken.user = listing.user;
+
+    userToken.save();
   }
 
-  userToken.quantity = userToken.quantity.plus(listing.quantity);
-  userToken.token = listing.token;
-  userToken.user = listing.user;
-
   store.remove("Listing", listing.id);
-
-  userToken.save();
 
   updateCollectionFloorAndTotal(getOrCreateCollection(listing.collection));
 }
