@@ -1,6 +1,10 @@
 name: Deploy Graph
 
-on: [push, pull_request]
+on:
+  pull_request:
+    types: [labeled]
+  push:
+    branches: [master]
 
 jobs:
   deploy-dev:
