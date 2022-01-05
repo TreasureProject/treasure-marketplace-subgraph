@@ -2,7 +2,7 @@ name: Deploy Graph
 
 on:
   pull_request:
-    types: [labeled]
+    types: [ready_for_review]
   push:
     branches: [master]
 
