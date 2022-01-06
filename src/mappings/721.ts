@@ -64,6 +64,7 @@ export function handleTransfer(event: Transfer): void {
 
     token.metadata = token.id;
     token.metadataUri = metadataUri;
+    token.totalOwners = ONE_BI;
 
     collection.save();
     token.save();

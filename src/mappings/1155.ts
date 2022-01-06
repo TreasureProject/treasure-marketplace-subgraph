@@ -198,7 +198,8 @@ export function handleTransferSingle(event: TransferSingle): void {
       token._owners = token._owners.concat([toUser.id]);
     }
 
-    token.save()
+    token.totalOwners = BigInt.fromI32(token._owners.length);
+    token.save();
 
     collection.totalOwners = getErc1155Owners(collection);
   }

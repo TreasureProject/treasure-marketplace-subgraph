@@ -139,6 +139,9 @@ type Token @entity {
   rank: Int
   rarity: BigDecimal
   tokenId: BigInt!
+
+  "This is used for ERC1155s"
+  totalOwners: BigInt!
 }
 
 type User @entity {
