@@ -12,6 +12,7 @@ import {
   addMetadataToToken,
   checkMissingMetadata,
   getCreator,
+  getErc1155Owners,
   getListingId,
   getName,
   getOrCreateCollection,
@@ -21,6 +22,7 @@ import {
   getTokenId,
   isMint,
   isSafeTransferFrom,
+  removeFromArray,
   updateCollectionFloorAndTotal,
 } from "../helpers";
 
@@ -47,6 +49,10 @@ export function handleTransferSingle(event: TransferSingle): void {
   token.tokenId = tokenId;
 
   if (isMint(from)) {
+    if (!collection._tokenIds.includes(tokenId.toString())) {
+      collection._tokenIds = collection._tokenIds.concat([tokenId.toString()]);
+    }
+
     let contract = ERC1155.bind(address);
     let uri = contract.try_uri(tokenId);
 
@@ -151,13 +157,15 @@ export function handleTransferSingle(event: TransferSingle): void {
     }
   } else {
     // Transfered away, update counts
-    if (isSafeTransferFrom(event.transaction)) {
+    if (isSafeTransferFrom(event.transaction) && !isMint(from)) {
       let seller = getListingId(from, address, tokenId);
       let listing = Listing.load(seller);
       let userToken = getOrCreateUserToken(seller);
       let updated = userToken.quantity.minus(quantity);
 
       if (userToken.quantity.equals(quantity) || updated.lt(ZERO_BI)) {
+        token._owners = removeFromArray(token._owners, from.toHexString());
+
         store.remove("UserToken", userToken.id);
       } else {
         userToken.quantity = userToken.quantity.minus(quantity);
@@ -185,6 +193,14 @@ export function handleTransferSingle(event: TransferSingle): void {
 
     toUser.save();
     userToken.save();
+
+    if (!token._owners.includes(toUser.id)) {
+      token._owners = token._owners.concat([toUser.id]);
+    }
+
+    token.save()
+
+    collection.totalOwners = getErc1155Owners(collection);
   }
 
   checkMissingMetadata(collection, event.block.number);

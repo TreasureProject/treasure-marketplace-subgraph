@@ -50,6 +50,7 @@ type Collection @entity {
   symbol: String
   tokens: [Token!]! @derivedFrom(field: "collection")
   totalListings: BigInt!
+  totalOwners: BigInt!
   totalSales: BigInt!
   totalVolume: BigInt!
 }
@@ -116,6 +117,9 @@ type Exerciser @entity {
 type Token @entity {
   id: ID!
   collection: Collection!
+
+  "Internal tracking of owners of token for ERC1155"
+  _owners: [String!]!
 
   "Used to support multiple filters with metadata attributes"
   filters: [String!]!

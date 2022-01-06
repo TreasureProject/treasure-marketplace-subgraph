@@ -4,7 +4,9 @@ import {
   Listing,
   Metadata,
   Token,
+  UserToken,
 } from "../../generated/schema";
+import { BigInt, log, store } from "@graphprotocol/graph-ts";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
@@ -28,7 +30,6 @@ import {
   updateCollectionFloorAndTotal,
   getOrCreateMetadata,
 } from "../helpers";
-import { log, store } from "@graphprotocol/graph-ts";
 
 export function handleTransfer(event: Transfer): void {
   let params = event.params;
@@ -80,6 +81,26 @@ export function handleTransfer(event: Transfer): void {
     }
   }
 
+  // Calculate total owners
+  let owners: string[] = [];
+
+  for (let index = 0; index < collection._tokenIds.length; index++) {
+    let _tokenId = BigInt.fromString(collection._tokenIds[index]);
+    let _token = tokenId.equals(_tokenId)
+      ? token
+      : Token.load(getTokenId(address, _tokenId));
+
+    if (_token) {
+      let owner = _token.owner;
+
+      if (owner && !owners.includes(owner)) {
+        owners.push(owner);
+      }
+    }
+  }
+
+  collection.totalOwners = BigInt.fromI32(owners.length);
+
   // Add missing metadata id to be tried again
   if (
     !metadata &&
@@ -106,7 +127,9 @@ export function handleTransfer(event: Transfer): void {
       updateCollectionFloorAndTotal(collection);
     }
 
-    store.remove("UserToken", seller);
+    if (UserToken.load(seller)) {
+      store.remove("UserToken", seller);
+    }
   }
 
   userToken.quantity = ONE_BI;
