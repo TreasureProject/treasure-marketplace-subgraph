@@ -9,6 +9,32 @@ const friend = new User();
 
 const mp = new Marketplace(me, you, treasure);
 
+test("items is calculated correctly", () => {
+  treasure.mint(0, 2, me.id);
+  treasure.mint(1, 1, me.id);
+
+  assert.fieldEquals("Collection", treasure.id, "totalItems", "3");
+  assert.fieldEquals("Token", `${treasure.id}-0x0`, "totalItems", "2");
+  assert.fieldEquals("Token", `${treasure.id}-0x1`, "totalItems", "1");
+
+  treasure.mint(2, 1, you.id);
+
+  assert.fieldEquals("Collection", treasure.id, "totalItems", "4");
+  assert.fieldEquals("Token", `${treasure.id}-0x0`, "totalItems", "2");
+  assert.fieldEquals("Token", `${treasure.id}-0x1`, "totalItems", "1");
+  assert.fieldEquals("Token", `${treasure.id}-0x2`, "totalItems", "1");
+
+  // Only send 1 of the 2
+  treasure.transfer(0, me.id, friend.id, 1);
+
+  assert.fieldEquals("Collection", treasure.id, "totalItems", "4");
+  assert.fieldEquals("Token", `${treasure.id}-0x0`, "totalItems", "2");
+  assert.fieldEquals("Token", `${treasure.id}-0x1`, "totalItems", "1");
+  assert.fieldEquals("Token", `${treasure.id}-0x2`, "totalItems", "1");
+
+  clearStore();
+});
+
 test("owners is calculated correctly with transfers", () => {
   treasure.mint(0, 2, me.id);
   treasure.mint(1, 1, me.id);
@@ -47,7 +73,6 @@ test("owners is calculated correctly with transfers", () => {
   assert.fieldEquals("Token", `${treasure.id}-0x0`, "totalOwners", "2");
   assert.fieldEquals("Token", `${treasure.id}-0x1`, "totalOwners", "1");
   assert.fieldEquals("Token", `${treasure.id}-0x2`, "totalOwners", "1");
-
 
   treasure.transfer(0, you.id, friend.id, 1);
 

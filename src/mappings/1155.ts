@@ -53,6 +53,8 @@ export function handleTransferSingle(event: TransferSingle): void {
       collection._tokenIds = collection._tokenIds.concat([tokenId.toString()]);
     }
 
+    collection.totalItems = collection.totalItems.plus(quantity);
+
     let contract = ERC1155.bind(address);
     let uri = contract.try_uri(tokenId);
 
@@ -74,6 +76,7 @@ export function handleTransferSingle(event: TransferSingle): void {
 
     token.metadata = token.id;
     token.metadataUri = metadataUri;
+    token.totalItems = token.totalItems.plus(quantity);
 
     collection.save();
     token.save();
