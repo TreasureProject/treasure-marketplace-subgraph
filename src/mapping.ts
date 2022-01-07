@@ -15,13 +15,15 @@ import {
   EXPLORER,
   ONE_BI,
   ZERO_BI,
+  getErc1155Owners,
+  getListingId,
   getOrCreateCollection,
   getOrCreateListing,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
-  getListingId,
   getTokenId,
+  removeFromArray,
   updateCollectionFloorAndTotal,
 } from "./helpers";
 
@@ -148,22 +150,13 @@ export function handleItemSold(event: ItemSold): void {
   let quantity = params.quantity;
   let seller = params.seller;
   let buyer = params.buyer;
+  let address = params.nftAddress;
+  let tokenId = params.tokenId;
 
-  let listing = getOrCreateListing(
-    getListingId(seller, params.nftAddress, params.tokenId)
-  );
+  let listing = getOrCreateListing(getListingId(seller, address, tokenId));
 
   if (!listing) {
     return;
-  }
-
-  if (listing.quantity.equals(quantity)) {
-    // Remove sold listing.
-    store.remove("Listing", listing.id);
-  } else {
-    listing.quantity = listing.quantity.minus(quantity);
-    listing._listedQuantity = listing.quantity;
-    listing.save();
   }
 
   let collection = getOrCreateCollection(listing.collection);
@@ -172,7 +165,25 @@ export function handleItemSold(event: ItemSold): void {
   collection.totalVolume = collection.totalVolume.plus(
     listing.pricePerItem.times(quantity)
   );
-  collection.save();
+
+  if (listing.quantity.equals(quantity)) {
+    // Remove sold listing.
+    store.remove("Listing", listing.id);
+
+    // Remove from owners if ERC1155s
+    if (collection.standard == "ERC1155") {
+      let token = getOrCreateToken(getTokenId(address, tokenId));
+
+      token._owners = removeFromArray(token._owners, seller.toHexString());
+      token.save();
+
+      collection.totalOwners = getErc1155Owners(collection);
+    }
+  } else {
+    listing.quantity = listing.quantity.minus(quantity);
+    listing._listedQuantity = listing.quantity;
+    listing.save();
+  }
 
   // We change the ID to not conflict with future listings of the same seller, contract, and token.
   let hash = event.transaction.hash.toHexString();
@@ -197,6 +208,7 @@ export function handleItemSold(event: ItemSold): void {
   sold.transactionLink = `https://${EXPLORER}/tx/${hash}`;
   sold.user = seller.toHexString();
 
+  collection.save();
   sold.save();
 
   updateCollectionFloorAndTotal(collection);
