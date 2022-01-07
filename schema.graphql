@@ -49,6 +49,7 @@ type Collection @entity {
   standard: TokenStandard
   symbol: String
   tokens: [Token!]! @derivedFrom(field: "collection")
+  totalItems: BigInt!
   totalListings: BigInt!
   totalOwners: BigInt!
   totalSales: BigInt!
@@ -139,6 +140,9 @@ type Token @entity {
   rank: Int
   rarity: BigDecimal
   tokenId: BigInt!
+
+  "This is used for ERC1155s"
+  totalItems: BigInt!
 
   "This is used for ERC1155s"
   totalOwners: BigInt!

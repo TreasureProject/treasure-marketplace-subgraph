@@ -52,6 +52,7 @@ export function handleTransfer(event: Transfer): void {
 
   if (isMint(from)) {
     collection._tokenIds = collection._tokenIds.concat([tokenId.toString()]);
+    collection.totalItems = collection.totalItems.plus(ONE_BI);
 
     let contract = ERC721.bind(address);
     let uri = contract.try_tokenURI(tokenId);

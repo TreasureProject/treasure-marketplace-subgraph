@@ -169,3 +169,27 @@ test("owners is calculated correctly for marketplace buy", () => {
 
   clearStore();
 });
+
+test("items are calculated correctly", () => {
+  smolbrain.mint(0, me.id);
+  smolbrain.mint(1, me.id);
+
+  assert.fieldEquals("Collection", smolbrain.id, "totalItems", "2");
+
+  smolbrain.mint(2, you.id);
+
+  assert.fieldEquals("Collection", smolbrain.id, "totalItems", "3");
+
+  smolbrain.transfer(0, me.id, friend.id);
+
+  assert.fieldEquals("Collection", smolbrain.id, "totalItems", "3");
+
+  const cars = new ERC721();
+
+  cars.mint(0, me.id);
+
+  assert.fieldEquals("Collection", cars.id, "totalItems", "1");
+  assert.fieldEquals("Collection", smolbrain.id, "totalItems", "3");
+
+  clearStore();
+});
