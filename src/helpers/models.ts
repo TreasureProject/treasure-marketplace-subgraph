@@ -132,6 +132,7 @@ export function getOrCreateToken(id: string): Token {
   if (!token) {
     token = new Token(id);
 
+    token._owners = [];
     token.filters = [];
 
     token.save();
@@ -618,6 +619,28 @@ export function checkMissingMetadata(
       metadataToken.save();
     }
   }
+}
+
+export function getErc1155Owners(collection: Collection): BigInt {
+  // Calculate total owners
+  let owners: string[] = [];
+
+  for (let index = 0; index < collection._tokenIds.length; index++) {
+    let tokenId = BigInt.fromString(collection._tokenIds[index]);
+    let token = Token.load(getTokenId(collection.address, tokenId));
+
+    if (token) {
+      for (let _index = 0; _index < token._owners.length; _index++) {
+        let owner = token._owners[_index];
+
+        if (owner && !owners.includes(owner)) {
+          owners.push(owner);
+        }
+      }
+    }
+  }
+
+  return BigInt.fromI32(owners.length);
 }
 
 export function updateCollectionFloorAndTotal(collection: Collection): void {
