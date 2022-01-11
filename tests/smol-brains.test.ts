@@ -193,3 +193,44 @@ test("items are calculated correctly", () => {
 
   clearStore();
 });
+
+test("listings are calculated correctly", () => {
+  smolbrain.mint(0, me.id);
+  smolbrain.mint(1, me.id);
+
+  assert.fieldEquals("Collection", smolbrain.id, "totalListings", "0");
+
+  mp.list(1);
+
+  assert.fieldEquals("Collection", smolbrain.id, "totalListings", "1");
+  assert.fieldEquals(
+    "Listing",
+    `${me.id}-${smolbrain.id}-0x1`,
+    "quantity",
+    "1"
+  );
+
+  mp.list(0);
+
+  assert.fieldEquals("Collection", smolbrain.id, "totalListings", "2");
+  assert.fieldEquals(
+    "Listing",
+    `${me.id}-${smolbrain.id}-0x0`,
+    "quantity",
+    "1"
+  );
+  assert.fieldEquals(
+    "Listing",
+    `${me.id}-${smolbrain.id}-0x1`,
+    "quantity",
+    "1"
+  );
+
+  mp.buy(0);
+
+  assert.fieldEquals("Collection", smolbrain.id, "totalListings", "1");
+  assert.fieldEquals("Listing", `${me.id}-${smolbrain.id}-0x1`, "quantity", "1");
+  assert.notInStore("Listing", `${me.id}-${smolbrain.id}-0x0`);
+
+  clearStore();
+});
