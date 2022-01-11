@@ -115,7 +115,7 @@ export function handleItemListed(event: ItemListed): void {
 
   if (status == "Active") {
     collection._listingIds = collection._listingIds.concat([listing.id]);
-    collection.totalListings = collection.totalListings.plus(ONE_BI);
+    collection.totalListings = collection.totalListings.plus(quantity);
   }
 
   listing._listedQuantity = quantity;
