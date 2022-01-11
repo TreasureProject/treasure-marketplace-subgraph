@@ -648,6 +648,7 @@ export function updateCollectionFloorAndTotal(collection: Collection): void {
   let listings = collection._listingIds;
 
   collection.floorPrice = ZERO_BI;
+  collection.totalListings = ZERO_BI;
 
   for (let index = 0; index < listings.length; index++) {
     let listing = Listing.load(listings[index]);
@@ -670,6 +671,10 @@ export function updateCollectionFloorAndTotal(collection: Collection): void {
       if (floorPrice.isZero() || floorPrice.gt(pricePerItem)) {
         collection.floorPrice = pricePerItem;
       }
+
+      collection.totalListings = collection.totalListings.plus(
+        listing.quantity
+      );
     } else {
       collection._listingIds = removeAtIndex(collection._listingIds, index);
     }
@@ -686,8 +691,6 @@ export function updateCollectionFloorAndTotal(collection: Collection): void {
       token.save();
     }
   }
-
-  collection.totalListings = BigInt.fromI32(collection._listingIds.length);
 
   collection.save();
 }

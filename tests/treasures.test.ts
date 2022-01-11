@@ -9,7 +9,38 @@ const friend = new User();
 
 const mp = new Marketplace(me, you, treasure);
 
-test("items is calculated correctly", () => {
+test("listings are calculated correctly", () => {
+  treasure.mint(0, 3, me.id);
+  treasure.mint(1, 1, me.id);
+
+  assert.fieldEquals("Collection", treasure.id, "totalListings", "0");
+
+  mp.list(1);
+
+  assert.fieldEquals("Collection", treasure.id, "totalListings", "1");
+  assert.fieldEquals("Listing", `${me.id}-${treasure.id}-0x1`, "quantity", "1");
+
+  mp.list(0, 3);
+
+  assert.fieldEquals("Collection", treasure.id, "totalListings", "4");
+  assert.fieldEquals("Listing", `${me.id}-${treasure.id}-0x0`, "quantity", "3");
+  assert.fieldEquals("Listing", `${me.id}-${treasure.id}-0x1`, "quantity", "1");
+
+  mp.cancel(1);
+
+  assert.fieldEquals("Collection", treasure.id, "totalListings", "3");
+  assert.fieldEquals("Listing", `${me.id}-${treasure.id}-0x0`, "quantity", "3");
+  assert.notInStore("Listing", `${me.id}-${treasure.id}-0x1`);
+
+  mp.buy(0);
+
+  assert.fieldEquals("Collection", treasure.id, "totalListings", "2");
+  assert.fieldEquals("Listing", `${me.id}-${treasure.id}-0x0`, "quantity", "2");
+
+  clearStore();
+});
+
+test("items are calculated correctly", () => {
   treasure.mint(0, 2, me.id);
   treasure.mint(1, 1, me.id);
 
