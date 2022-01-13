@@ -3,8 +3,8 @@ import { ERC1155, Marketplace, User } from "./utils";
 
 const treasure = new ERC1155();
 
-const me = new User("0x0000000000000000000000000000000000000022");
-const you = new User("0x0000000000000000000000000000000000000333");
+const me = new User();
+const you = new User();
 const friend = new User();
 
 const mp = new Marketplace(me, you, treasure);
