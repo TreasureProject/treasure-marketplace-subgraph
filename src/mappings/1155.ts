@@ -7,6 +7,7 @@ import {
   URI,
 } from "../../generated/TreasureMarketplace/ERC1155";
 import {
+  ONE_BI,
   STAKING_ADDRESS,
   ZERO_BI,
   addMetadataToToken,
@@ -103,7 +104,9 @@ export function handleTransferSingle(event: TransferSingle): void {
     let updated = userToken.quantity.minus(quantity);
 
     if (userToken.quantity.equals(quantity) || updated.lt(ZERO_BI)) {
-      store.remove("UserToken", userToken.id);
+      if (store.get("UserToken", userToken.id)) {
+        store.remove("UserToken", userToken.id);
+      }
     } else {
       userToken.quantity = userToken.quantity.minus(quantity);
       userToken.save();
@@ -124,28 +127,37 @@ export function handleTransferSingle(event: TransferSingle): void {
     let id = getListingId(to, address, tokenId);
     let listing = Listing.load(id);
     let userToken = getOrCreateUserToken(id);
-    let updated = BigInt.fromI32(0); //userToken.quantity.minus(quantity);
+    let updated = quantity.neg();
 
     if (listing) {
-      if (listing._listedQuantity.notEqual(listing.quantity)) {
-        listing.quantity = listing.quantity.plus(quantity);
+      for (let index = 0; index < quantity.toI32(); index++) {
+        switch (true) {
+          case listing.status == "Hidden":
+            listing.status = "Active";
 
-        if (listing.quantity.gt(listing._listedQuantity)) {
-          updated = listing._listedQuantity.minus(listing.quantity);
+            updated = updated.plus(listing.quantity);
+            index = listing.quantity.gt(ONE_BI)
+              ? listing.quantity.minus(ONE_BI).toI32()
+              : index;
 
-          listing.quantity = listing._listedQuantity;
+            break;
+          case listing._listedQuantity.gt(listing.quantity):
+            listing.quantity = listing.quantity.plus(ONE_BI);
+
+            updated = updated.plus(ONE_BI);
+
+            break;
         }
-
-        listing.status = "Active";
-        listing.save();
-
-        collection._listingIds = collection._listingIds.concat([listing.id]);
-
-        updateCollectionFloorAndTotal(collection);
-      } else {
-        // Set updated to get our user tokens correct
-        updated = quantity.neg();
       }
+
+      listing.save();
+
+      if (!collection._listingIds.includes(listing.id)) {
+        collection._listingIds = collection._listingIds.concat([listing.id]);
+        collection.save();
+      }
+
+      updateCollectionFloorAndTotal(collection);
     }
 
     if (!listing || updated.lt(ZERO_BI)) {
