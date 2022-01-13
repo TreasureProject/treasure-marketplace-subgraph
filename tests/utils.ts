@@ -5,6 +5,7 @@ import {
   ItemSold,
 } from "../generated/TreasureMarketplace/TreasureMarketplace";
 import {
+  STAKING_ADDRESS,
   ZERO_ADDRESS,
   createMetadataAttribute,
   getAttributeId,
@@ -77,6 +78,10 @@ export class ERC1155 extends Collection {
     this.transfer(tokenId, ZERO_ADDRESS, user, quantity);
   }
 
+  stake(tokenId: i32, quantity: i32, user: string): void {
+    this.transfer(tokenId, user, STAKING_ADDRESS, quantity);
+  }
+
   transfer(
     tokenId: i32,
     from: string,
@@ -127,6 +132,10 @@ export class ERC1155 extends Collection {
     );
 
     handleTransferSingle(transferEvent);
+  }
+
+  unstake(tokenId: i32, quantity: i32, user: string): void {
+    this.transfer(tokenId, STAKING_ADDRESS, user, quantity);
   }
 }
 
