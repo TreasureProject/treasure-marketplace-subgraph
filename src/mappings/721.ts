@@ -6,7 +6,7 @@ import {
   Token,
   UserToken,
 } from "../../generated/schema";
-import { BigInt, log, store } from "@graphprotocol/graph-ts";
+import { BigInt, TypedMap, log, store } from "@graphprotocol/graph-ts";
 import { ERC721, Transfer } from "../../generated/TreasureMarketplace/ERC721";
 import {
   ONE_BI,
@@ -16,19 +16,19 @@ import {
   checkMissingMetadata,
   createMetadataAttribute,
   getAttributeId,
+  getListingId,
   getOrCreateAttribute,
   getOrCreateCollection,
+  getOrCreateMetadata,
   getOrCreateToken,
   getOrCreateUser,
   getOrCreateUserToken,
-  getListingId,
   getTokenId,
   isMint,
   isSafeTransferFrom,
   removeFromArray,
   toBigDecimal,
   updateCollectionFloorAndTotal,
-  getOrCreateMetadata,
 } from "../helpers";
 
 export function handleTransfer(event: Transfer): void {
@@ -84,24 +84,22 @@ export function handleTransfer(event: Transfer): void {
   }
 
   // Calculate total owners
-  let owners: string[] = [];
+  let owners = new TypedMap<string, boolean>();
 
-  for (let index = 0; index < collection._tokenIds.length; index++) {
-    let _tokenId = BigInt.fromString(collection._tokenIds[index]);
-    let _token = tokenId.equals(_tokenId)
-      ? token
-      : Token.load(getTokenId(address, _tokenId));
+  collection._owners = removeFromArray(
+    collection._owners.concat([to.toHexString()]),
+    from.toHexString()
+  );
 
-    if (_token) {
-      let owner = _token.owner;
+  for (let index = 0; index < collection._owners.length; index++) {
+    let owner = collection._owners[index];
 
-      if (owner && !owners.includes(owner)) {
-        owners.push(owner);
-      }
+    if (!owners.isSet(owner)) {
+      owners.set(owner, true);
     }
   }
 
-  collection.totalOwners = BigInt.fromI32(owners.length);
+  collection.totalOwners = BigInt.fromI32(owners.entries.length);
 
   // Add missing metadata id to be tried again
   if (

@@ -34,6 +34,9 @@ type Collection @entity {
   "Internal for tracking metadata failures to retry"
   _missingMetadataIds: [String!]!
   
+  "Internal for tracking owners of tokens for a collection"
+  _owners: [String!]!
+  
   "Internal for tracking tokenIds minted for a collection"
   _tokenIds: [String!]!
 
