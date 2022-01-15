@@ -360,10 +360,10 @@ export function addMetadataToToken(
 let thresholds = new TypedMap<string, number>();
 let isRinkeby = dataSource.network() == "rinkeby";
 
-thresholds.set("Smol Bodies", isRinkeby ? 20 : 5_622);
-thresholds.set("Smol Brains", isRinkeby ? 241 : 10_805);
-thresholds.set("Smol Brains Land", isRinkeby ? 2 : 4_050);
-thresholds.set("Smol Cars", isRinkeby ? 120 : 8_484);
+thresholds.set("Smol Bodies", isRinkeby ? 20 : 6_170);
+thresholds.set("Smol Brains", isRinkeby ? 241 : 11_700);
+thresholds.set("Smol Brains Land", isRinkeby ? 2 : 4_225);
+thresholds.set("Smol Cars", isRinkeby ? 120 : 8_900);
 
 function shouldCalculate(collection: Collection): boolean {
   let count = collection._tokenIds.length;
