@@ -19,6 +19,8 @@ import {
   handleDropSchool,
   handleJoinSchool,
 } from "../src/mappings/smol-brains";
+import { Transfer } from "../generated/Smol Brains/ERC721";
+import { handleTransfer } from "../src/mappings/smol-brains";
 
 class Smolbrain extends ERC721 {
   // Not really the tokenId, but this should work for head size
@@ -242,4 +244,17 @@ test("listings are calculated correctly", () => {
     "1"
   );
   assert.notInStore("Listing", `${me.id}-${smolbrain.id}-0x0`);
+});
+
+test("active listing is cancelled after transfering smol", () => {
+  let id = getListingId(me.address, smolbrain.address, BigInt.fromI32(0));
+
+  smolbrain.mint(0, me.id);
+  mp.list(0);
+
+  assert.fieldEquals("Listing", id, "status", "Active");
+
+  smolbrain.transfer(0, me.id, friend.id);
+
+  assert.notInStore("Listing", id);
 });

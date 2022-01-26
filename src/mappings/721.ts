@@ -30,6 +30,7 @@ import {
   toBigDecimal,
   updateCollectionFloorAndTotal,
 } from "../helpers";
+import { cancelItem } from "../mapping";
 
 export function handleTransfer(event: Transfer): void {
   let params = event.params;
@@ -131,6 +132,9 @@ export function handleTransfer(event: Transfer): void {
       store.remove("UserToken", seller);
     }
   }
+
+  // Remove any active listings from TreasureMarketplace contract
+  cancelItem(params.from, address, tokenId);
 
   userToken.quantity = ONE_BI;
   userToken.token = token.id;

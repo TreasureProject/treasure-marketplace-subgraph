@@ -26,6 +26,7 @@ import {
   removeFromArray,
   updateCollectionFloorAndTotal,
 } from "../helpers";
+import { cancelItem } from "../mapping";
 
 export function handleTransferSingle(event: TransferSingle): void {
   let params = event.params;
@@ -84,6 +85,9 @@ export function handleTransferSingle(event: TransferSingle): void {
 
     addMetadataToToken(token, ZERO_BI, collection);
   }
+
+  // Remove any active listings from TreasureMarketplace contract
+  cancelItem(params.from, address, tokenId);
 
   let metadata = Metadata.load(token.id);
 

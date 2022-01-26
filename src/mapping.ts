@@ -1,4 +1,4 @@
-import { BigInt, log, store } from "@graphprotocol/graph-ts";
+import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
 import { Exerciser, Listing, Student, UserToken } from "../generated/schema";
 import {
   ItemCanceled,
@@ -44,19 +44,21 @@ function formatPrice(number: BigInt): string {
 
 export function handleItemCanceled(event: ItemCanceled): void {
   let params = event.params;
-  let seller = params.seller;
+  cancelItem(params.seller, params.nftAddress, params.tokenId);
+}
 
+export function cancelItem(seller: Address, tokenAddress: Address, tokenId: BigInt): void {
   let listing = getOrCreateListing(
-    getListingId(seller, params.nftAddress, params.tokenId)
+    getListingId(seller, tokenAddress, tokenId)
   );
   let user = getOrCreateUser(seller.toHexString());
 
   if (!listing) {
-    log.info("[Listing is null]: {}", [params.seller.toHexString()]);
+    log.info("[Listing is null]: {}", [seller.toHexString()]);
     return;
   }
   if (!user) {
-    log.info("[User is null]: {}", [params.seller.toHexString()]);
+    log.info("[User is null]: {}", [seller.toHexString()]);
     return;
   }
 
