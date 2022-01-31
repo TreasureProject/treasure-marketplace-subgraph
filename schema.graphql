@@ -9,6 +9,20 @@ enum TokenStandard {
   ERC1155
 }
 
+type _Schema_
+  @fulltext(
+    name: "tokenSearch"
+    language: en
+    algorithm: rank
+    include: [{ entity: "Token", fields: [{ name: "name" }] }]
+  )
+  @fulltext(
+    name: "collectionSearch"
+    language: en
+    algorithm: rank
+    include: [{ entity: "Collection", fields: [{ name: "name" }] }]
+  )
+
 type Attribute @entity {
   id: ID!
 
@@ -30,13 +44,13 @@ type Collection @entity {
 
   "Internal for tracking listings"
   _listingIds: [String!]!
-  
+
   "Internal for tracking metadata failures to retry"
   _missingMetadataIds: [String!]!
-  
+
   "Internal for tracking owners of tokens for a collection"
   _owners: [String!]!
-  
+
   "Internal for tracking tokenIds minted for a collection"
   _tokenIds: [String!]!
 
